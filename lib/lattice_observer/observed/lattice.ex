@@ -9,6 +9,8 @@ defmodule LatticeObserver.Observed.Lattice do
   alias __MODULE__
   alias LatticeObserver.Observed.{Provider, Host, Instance, LinkDefinition}
 
+  require Logger
+
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
   defstruct [:actors, :providers, :hosts, :linkdefs, :ocimap, :instance_tracking]
@@ -238,7 +240,8 @@ defmodule LatticeObserver.Observed.Lattice do
     %Lattice{l | ocimap: Map.delete(l.ocimap, image_ref)}
   end
 
-  def apply_event(l = %Lattice{}, _evt = %Cloudevents.Format.V_1_0.Event{}) do
+  def apply_event(l = %Lattice{}, evt) do
+    Logger.warn("Unexpected event: #{inspect(evt)}")
     l
   end
 

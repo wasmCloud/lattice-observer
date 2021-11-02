@@ -8,11 +8,15 @@ defmodule LatticeObserver.SubscriptionServer do
       |> String.split(".")
       |> Enum.at(2)
 
-    event = Jason.decode!(body)
+    case Jason.decode(body) do
+      {:ok, event} ->
+        Registry.dispatch(Registry.LatticeObserverRegistry, prefix, fn entries ->
+          for {pid, _} <- entries, do: GenServer.cast(pid, {:handle_event, event})
+        end)
 
-    Registry.dispatch(Registry.LatticeObserverRegistry, prefix, fn entries ->
-      for {pid, _} <- entries, do: GenServer.cast(pid, {:handle_event, event})
-    end)
+      {:error, error} ->
+        Logger.error("Failed to decode event: #{inspect(error)}")
+    end
 
     :ok
   end

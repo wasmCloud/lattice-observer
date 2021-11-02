@@ -34,12 +34,20 @@ defmodule LatticeObserver.NatsObserver do
 
   @impl true
   def handle_cast({:handle_event, event}, state) do
-    nstate = %{state | lc: LatticeObserver.Observed.Lattice.apply_event(state.lc, event)}
+    case Cloudevents.from_map(event) do
+      {:ok, evt} ->
+        Logger.debug("Processing event #{evt.type}")
+        nstate = %{state | lc: LatticeObserver.Observed.Lattice.apply_event(state.lc, evt)}
 
-    if nstate != state do
-      LatticeObserver.Observer.execute(state.module, state.lc)
+        if nstate != state do
+          LatticeObserver.Observer.execute(state.module, nstate.lc, evt, state.lattice_prefix)
+        end
+
+        {:noreply, nstate}
+
+      {:error, error} ->
+        Logger.error("Failed to decode cloud event: #{inspect(error)}")
+        {:noreply, state}
     end
-
-    {:noreply, nstate}
   end
 end
