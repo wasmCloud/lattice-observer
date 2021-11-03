@@ -56,6 +56,12 @@ defmodule LatticeObserver.Observed.Lattice do
     }
   end
 
+  # Note to those unfamiliar with Elixir matching syntax. The following function
+  # patterns are not "complete" or "exact" matches. They only match the _minimum_ required shape of
+  # the event in question. Events can have more fields with which the pattern isn't
+  # concerned and the pattern match will still be successful. Where possible, we've tried to use
+  # ignored variables to indicate required fields that aren't used for internal processing.
+
   @spec apply_event(
           t(),
           Cloudevents.Format.V_1_0.Event.t()
@@ -207,7 +213,8 @@ defmodule LatticeObserver.Observed.Lattice do
           data: %{
             "actor_id" => actor_id,
             "link_name" => link_name,
-            "provider_id" => provider_id
+            "provider_id" => provider_id,
+            "contract_id" => _contract_id
           },
           source: _source_host,
           datacontenttype: "application/json",
