@@ -32,6 +32,11 @@ defmodule LatticeObserver.NatsObserver do
     {:ok, state}
   end
 
+  @spec get_prefix(pid) :: String.t()
+  def get_prefix(pid) do
+    GenServer.call(pid, :get_prefix)
+  end
+
   @impl true
   def handle_cast({:handle_event, event}, state) do
     case Cloudevents.from_map(event) do
@@ -49,5 +54,10 @@ defmodule LatticeObserver.NatsObserver do
         Logger.error("Failed to decode cloud event: #{inspect(error)}")
         {:noreply, state}
     end
+  end
+
+  @impl true
+  def handle_call(:get_prefix, _from, state) do
+    {:reply, state.lattice_prefix, state}
   end
 end
