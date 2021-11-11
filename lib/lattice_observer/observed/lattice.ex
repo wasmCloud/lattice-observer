@@ -13,7 +13,7 @@ defmodule LatticeObserver.Observed.Lattice do
 
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
-  defstruct [:actors, :providers, :hosts, :linkdefs, :ocimap, :instance_tracking]
+  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking]
 
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
@@ -24,7 +24,7 @@ defmodule LatticeObserver.Observed.Lattice do
   @type providermap :: %{required(provider_key()) => Provider.t()}
   @type hostmap :: %{required(String.t()) => Host.t()}
   # map between OCI image URL/imageref and public key
-  @type ocimap :: %{required(String.t()) => String.t()}
+  @type refmap :: %{required(String.t()) => String.t()}
 
   @typedoc """
   Keys are the instance ID, values are ISO 8601 timestamps in UTC
@@ -41,7 +41,7 @@ defmodule LatticeObserver.Observed.Lattice do
           hosts: hostmap(),
           linkdefs: [LinkDefinition.t()],
           instance_tracking: instance_trackmap(),
-          ocimap: ocimap()
+          refmap: refmap()
         }
 
   @spec new :: t()
@@ -52,7 +52,7 @@ defmodule LatticeObserver.Observed.Lattice do
       hosts: %{},
       linkdefs: [],
       instance_tracking: %{},
-      ocimap: %{}
+      refmap: %{}
     }
   end
 
@@ -231,9 +231,9 @@ defmodule LatticeObserver.Observed.Lattice do
         },
         source: _source_host,
         datacontenttype: "application/json",
-        type: "com.wasmcloud.lattice.ocimap_put"
+        type: "com.wasmcloud.lattice.refmap_set"
       }) do
-    %Lattice{l | ocimap: Map.put(l.ocimap, image_ref, public_key)}
+    %Lattice{l | refmap: Map.put(l.refmap, image_ref, public_key)}
   end
 
   def apply_event(l = %Lattice{}, %Cloudevents.Format.V_1_0.Event{
@@ -242,9 +242,9 @@ defmodule LatticeObserver.Observed.Lattice do
         },
         source: _source_host,
         datacontenttype: "application/json",
-        type: "com.wasmcloud.lattice.ocimap_del"
+        type: "com.wasmcloud.lattice.refmap_del"
       }) do
-    %Lattice{l | ocimap: Map.delete(l.ocimap, image_ref)}
+    %Lattice{l | refmap: Map.delete(l.refmap, image_ref)}
   end
 
   def apply_event(l = %Lattice{}, evt) do
@@ -475,8 +475,8 @@ defmodule LatticeObserver.Observed.Lattice do
     end
   end
 
-  def lookup_ociref(%Lattice{ocimap: ocimap}, target) when is_binary(target) do
-    case Map.get(ocimap, target) do
+  def lookup_ociref(%Lattice{refmap: refmap}, target) when is_binary(target) do
+    case Map.get(refmap, target) do
       nil -> :error
       pk -> {:ok, pk}
     end

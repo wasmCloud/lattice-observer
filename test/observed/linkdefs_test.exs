@@ -33,7 +33,7 @@ defmodule LatticeObserverTest.Observed.LinkdefsTest do
                actors: %{},
                hosts: %{},
                instance_tracking: %{},
-               ocimap: %{},
+               refmap: %{},
                linkdefs: [
                  %LatticeObserver.Observed.LinkDefinition{
                    actor_id: "Mxxx",
@@ -59,7 +59,7 @@ defmodule LatticeObserverTest.Observed.LinkdefsTest do
         )
 
       l = Lattice.apply_event(Lattice.new(), put)
-      del = CloudEvents.linkdef_del("Mxxx", "Vxxx", "default", "Nxxx")
+      del = CloudEvents.linkdef_del("Mxxx", "Vxxx", "default", "wasmcloud:testing", "Nxxx")
       l = Lattice.apply_event(l, del)
       assert l == Lattice.new()
     end

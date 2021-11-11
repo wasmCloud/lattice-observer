@@ -33,7 +33,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           "abc123" => stamp1
         },
         linkdefs: [],
-        ocimap: %{},
+        refmap: %{},
         providers: %{
           {"Vxxx", "default"} => %Provider{
             contract_id: "wasmcloud:test",
@@ -78,7 +78,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       desired = %Lattice{
         actors: %{},
         hosts: %{},
-        ocimap: %{},
+        refmap: %{},
         instance_tracking: %{},
         linkdefs: [],
         providers: %{
@@ -130,7 +130,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                hosts: %{},
                instance_tracking: %{"abc123" => stamp, "abc456" => stamp2},
                linkdefs: [],
-               ocimap: %{},
+               refmap: %{},
                providers: %{
                  {"Vxxx", "default"} => %Provider{
                    contract_id: "wasmcloud:test",
@@ -168,7 +168,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                  "abc789" => stamp3
                },
                linkdefs: [],
-               ocimap: %{},
+               refmap: %{},
                providers: %{
                  {"Vxxx", "default"} => %Provider{
                    contract_id: "wasmcloud:test",

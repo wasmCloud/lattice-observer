@@ -21,7 +21,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      last_seen: stamp
                    }
                  },
-                 ocimap: %{},
+                 refmap: %{},
                  instance_tracking: %{},
                  linkdefs: [],
                  providers: %{}
@@ -41,7 +41,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      last_seen: stamp2
                    }
                  },
-                 ocimap: %{},
+                 refmap: %{},
                  instance_tracking: %{},
                  linkdefs: [],
                  providers: %{}
