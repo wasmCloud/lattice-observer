@@ -26,7 +26,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                    }
                  ]
                },
-               ocimap: %{},
+               refmap: %{},
                hosts: %{},
                instance_tracking: %{
                  "abc123" => stamp1
@@ -44,7 +44,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                actors: %{"Mxxx" => []},
                hosts: %{},
                linkdefs: [],
-               ocimap: %{},
+               refmap: %{},
                providers: %{},
                instance_tracking: %{}
              }
@@ -67,7 +67,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                  ]
                },
                hosts: %{},
-               ocimap: %{},
+               refmap: %{},
                instance_tracking: %{
                  "abc123" => stamp1,
                  "abc345" => stamp2
@@ -94,7 +94,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                  ]
                },
                hosts: %{},
-               ocimap: %{},
+               refmap: %{},
                instance_tracking: %{
                  "abc345" => stamp2
                },
