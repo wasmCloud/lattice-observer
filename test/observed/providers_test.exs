@@ -27,27 +27,24 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.apply_event(l, start)
 
       orig_desired = %Lattice{
-        actors: %{},
-        hosts: %{},
-        instance_tracking: %{
-          "abc123" => stamp1
-        },
-        linkdefs: [],
-        refmap: %{},
-        providers: %{
-          {"Vxxx", "default"} => %Provider{
-            contract_id: "wasmcloud:test",
-            id: "Vxxx",
-            instances: [
-              %Instance{
-                host_id: "Nxxx",
-                id: "abc123",
-                spec_id: "testapp"
-              }
-            ],
-            link_name: "default"
+        Lattice.new()
+        | instance_tracking: %{
+            "abc123" => stamp1
+          },
+          providers: %{
+            {"Vxxx", "default"} => %Provider{
+              contract_id: "wasmcloud:test",
+              id: "Vxxx",
+              instances: [
+                %Instance{
+                  host_id: "Nxxx",
+                  id: "abc123",
+                  spec_id: "testapp"
+                }
+              ],
+              link_name: "default"
+            }
           }
-        }
       }
 
       assert l == orig_desired
@@ -76,19 +73,15 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.apply_event(l, stop)
 
       desired = %Lattice{
-        actors: %{},
-        hosts: %{},
-        refmap: %{},
-        instance_tracking: %{},
-        linkdefs: [],
-        providers: %{
-          {"Vxxx", "default"} => %Provider{
-            contract_id: "wasmcloud:test",
-            id: "Vxxx",
-            instances: [],
-            link_name: "default"
+        Lattice.new()
+        | providers: %{
+            {"Vxxx", "default"} => %Provider{
+              contract_id: "wasmcloud:test",
+              id: "Vxxx",
+              instances: [],
+              link_name: "default"
+            }
           }
-        }
       }
 
       assert l == desired
@@ -126,22 +119,19 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.apply_event(l, start2)
 
       assert l == %Lattice{
-               actors: %{},
-               hosts: %{},
-               instance_tracking: %{"abc123" => stamp, "abc456" => stamp2},
-               linkdefs: [],
-               refmap: %{},
-               providers: %{
-                 {"Vxxx", "default"} => %Provider{
-                   contract_id: "wasmcloud:test",
-                   id: "Vxxx",
-                   instances: [
-                     %Instance{host_id: "Nxxx", id: "abc456", spec_id: "testapp"},
-                     %Instance{host_id: "Nxxx", id: "abc123", spec_id: "testapp"}
-                   ],
-                   link_name: "default"
+               Lattice.new()
+               | instance_tracking: %{"abc123" => stamp, "abc456" => stamp2},
+                 providers: %{
+                   {"Vxxx", "default"} => %Provider{
+                     contract_id: "wasmcloud:test",
+                     id: "Vxxx",
+                     instances: [
+                       %Instance{host_id: "Nxxx", id: "abc456", spec_id: "testapp"},
+                       %Instance{host_id: "Nxxx", id: "abc123", spec_id: "testapp"}
+                     ],
+                     link_name: "default"
+                   }
                  }
-               }
              }
 
       # Add a new instance from a different spec
@@ -160,39 +150,36 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.apply_event(l, start3)
 
       assert l == %Lattice{
-               actors: %{},
-               hosts: %{},
-               instance_tracking: %{
-                 "abc123" => stamp,
-                 "abc456" => stamp2,
-                 "abc789" => stamp3
-               },
-               linkdefs: [],
-               refmap: %{},
-               providers: %{
-                 {"Vxxx", "default"} => %Provider{
-                   contract_id: "wasmcloud:test",
-                   id: "Vxxx",
-                   instances: [
-                     %Instance{
-                       host_id: "Nxxx",
-                       id: "abc789",
-                       spec_id: "othertestapp"
-                     },
-                     %Instance{
-                       host_id: "Nxxx",
-                       id: "abc456",
-                       spec_id: "testapp"
-                     },
-                     %Instance{
-                       host_id: "Nxxx",
-                       id: "abc123",
-                       spec_id: "testapp"
-                     }
-                   ],
-                   link_name: "default"
+               Lattice.new()
+               | instance_tracking: %{
+                   "abc123" => stamp,
+                   "abc456" => stamp2,
+                   "abc789" => stamp3
+                 },
+                 providers: %{
+                   {"Vxxx", "default"} => %Provider{
+                     contract_id: "wasmcloud:test",
+                     id: "Vxxx",
+                     instances: [
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc789",
+                         spec_id: "othertestapp"
+                       },
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc456",
+                         spec_id: "testapp"
+                       },
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc123",
+                         spec_id: "testapp"
+                       }
+                     ],
+                     link_name: "default"
+                   }
                  }
-               }
              }
     end
   end

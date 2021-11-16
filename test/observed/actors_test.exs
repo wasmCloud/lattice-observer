@@ -17,22 +17,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       l = Lattice.apply_event(l, start)
 
       assert l == %Lattice{
-               actors: %{
-                 "Mxxx" => [
-                   %Instance{
-                     host_id: "Nxxx",
-                     id: "abc123",
-                     spec_id: "testapp"
-                   }
-                 ]
-               },
-               refmap: %{},
-               hosts: %{},
-               instance_tracking: %{
-                 "abc123" => stamp1
-               },
-               linkdefs: [],
-               providers: %{}
+               Lattice.new()
+               | actors: %{
+                   "Mxxx" => [
+                     %Instance{
+                       host_id: "Nxxx",
+                       id: "abc123",
+                       spec_id: "testapp"
+                     }
+                   ]
+                 },
+                 instance_tracking: %{
+                   "abc123" => stamp1
+                 }
              }
 
       stop = CloudEvents.actor_stopped("Mxxx", "abc123", @test_spec, @test_host)
@@ -41,12 +38,8 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       l = Lattice.apply_event(l, stop)
 
       assert l == %Lattice{
-               actors: %{"Mxxx" => []},
-               hosts: %{},
-               linkdefs: [],
-               refmap: %{},
-               providers: %{},
-               instance_tracking: %{}
+               Lattice.new()
+               | actors: %{"Mxxx" => []}
              }
     end
 
@@ -60,20 +53,17 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       stamp2 = Lattice.timestamp_from_iso8601(start2.time)
 
       assert l == %Lattice{
-               actors: %{
-                 "Mxxx" => [
-                   %Instance{host_id: "Nxxx", id: "abc345", spec_id: "othertestapp"},
-                   %Instance{host_id: "Nxxx", id: "abc123", spec_id: "testapp"}
-                 ]
-               },
-               hosts: %{},
-               refmap: %{},
-               instance_tracking: %{
-                 "abc123" => stamp1,
-                 "abc345" => stamp2
-               },
-               linkdefs: [],
-               providers: %{}
+               Lattice.new()
+               | actors: %{
+                   "Mxxx" => [
+                     %Instance{host_id: "Nxxx", id: "abc345", spec_id: "othertestapp"},
+                     %Instance{host_id: "Nxxx", id: "abc123", spec_id: "testapp"}
+                   ]
+                 },
+                 instance_tracking: %{
+                   "abc123" => stamp1,
+                   "abc345" => stamp2
+                 }
              }
 
       assert Lattice.actors_in_appspec(l, "testapp") == [
@@ -84,22 +74,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       l = Lattice.apply_event(l, stop)
 
       assert l == %LatticeObserver.Observed.Lattice{
-               actors: %{
-                 "Mxxx" => [
-                   %LatticeObserver.Observed.Instance{
-                     host_id: "Nxxx",
-                     id: "abc345",
-                     spec_id: "othertestapp"
-                   }
-                 ]
-               },
-               hosts: %{},
-               refmap: %{},
-               instance_tracking: %{
-                 "abc345" => stamp2
-               },
-               linkdefs: [],
-               providers: %{}
+               Lattice.new()
+               | actors: %{
+                   "Mxxx" => [
+                     %LatticeObserver.Observed.Instance{
+                       host_id: "Nxxx",
+                       id: "abc345",
+                       spec_id: "othertestapp"
+                     }
+                   ]
+                 },
+                 instance_tracking: %{
+                   "abc345" => stamp2
+                 }
              }
     end
   end

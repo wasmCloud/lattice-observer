@@ -7,13 +7,13 @@ defmodule LatticeObserver.Observed.Lattice do
   lattice events
   """
   alias __MODULE__
-  alias LatticeObserver.Observed.{Provider, Host, Instance, LinkDefinition}
+  alias LatticeObserver.Observed.{Provider, Host, Instance, LinkDefinition, Decay}
 
   require Logger
 
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
-  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking]
+  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking, :parameters]
 
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
@@ -26,10 +26,19 @@ defmodule LatticeObserver.Observed.Lattice do
   # map between OCI image URL/imageref and public key
   @type refmap :: %{required(String.t()) => String.t()}
 
+  @type entitystatus :: :healthy | :warn | :fail | :unavailable | :remove
+
   @typedoc """
   Keys are the instance ID, values are ISO 8601 timestamps in UTC
   """
   @type instance_trackmap :: %{required(String.t()) => DateTime.t()}
+
+  defmodule Parameters do
+    @type t :: %Parameters{
+            host_status_decay_rate_seconds: Integer.t()
+          }
+    defstruct [:host_status_decay_rate_seconds]
+  end
 
   @typedoc """
   The root structure of an observed lattice. An observed lattice keeps track
@@ -41,18 +50,23 @@ defmodule LatticeObserver.Observed.Lattice do
           hosts: hostmap(),
           linkdefs: [LinkDefinition.t()],
           instance_tracking: instance_trackmap(),
-          refmap: refmap()
+          refmap: refmap(),
+          parameters: Parameters.t()
         }
 
   @spec new :: t()
-  def new() do
+  def new(parameters \\ []) do
     %Lattice{
       actors: %{},
       providers: %{},
       hosts: %{},
       linkdefs: [],
       instance_tracking: %{},
-      refmap: %{}
+      refmap: %{},
+      parameters: %Parameters{
+        host_status_decay_rate_seconds:
+          Keyword.get(parameters, :host_status_decay_rate_seconds, 35)
+      }
     }
   end
 
@@ -77,6 +91,30 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     record_host(l, source_host, labels, stamp)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          data: %{"labels" => labels},
+          datacontenttype: "application/json",
+          source: source_host,
+          time: stamp,
+          type: "com.wasmcloud.lattice.host_started"
+        }
+      ) do
+    record_host(l, source_host, labels, stamp)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: source_host,
+          type: "com.wasmcloud.lattice.host_stopped"
+        }
+      ) do
+    remove_host(l, source_host)
   end
 
   def apply_event(
@@ -247,6 +285,16 @@ defmodule LatticeObserver.Observed.Lattice do
     %Lattice{l | refmap: Map.delete(l.refmap, image_ref)}
   end
 
+  def apply_event(l = %Lattice{}, %Cloudevents.Format.V_1_0.Event{
+        source: _source_host,
+        datacontenttype: "application/json",
+        type: "com.wasmcloud.synthetic.decay_ticked",
+        time: stamp
+      }) do
+    event_time = timestamp_from_iso8601(stamp)
+    Decay.age_hosts(l, event_time)
+  end
+
   def apply_event(l = %Lattice{}, evt) do
     Logger.warn("Unexpected event: #{inspect(evt)}")
     l
@@ -384,12 +432,62 @@ defmodule LatticeObserver.Observed.Lattice do
     end
   end
 
-  defp record_host(l = %Lattice{}, source_host, labels, stamp) do
-    host = %Host{
-      id: source_host,
-      labels: labels,
-      last_seen: timestamp_from_iso8601(stamp)
+  defp remove_host(l = %Lattice{}, source_host) do
+    # NOTE: the instance_tracking map will purge unseen instances
+    # during the decay event processing.
+
+    l = %Lattice{
+      l
+      | hosts: Map.delete(l.hosts, source_host),
+        actors:
+          l.actors
+          |> Enum.map(fn {k, v} ->
+            {k, v |> Enum.reject(fn i -> i.host_id == source_host end)}
+          end)
+          |> Enum.into(%{}),
+        providers:
+          l.providers
+          |> Enum.map(fn {k, v} ->
+            {k,
+             %Provider{
+               v
+               | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
+             }}
+          end)
+          |> Enum.into(%{})
     }
+
+    l |> strip_instanceless_entities()
+  end
+
+  defp strip_instanceless_entities(l = %Lattice{}) do
+    %Lattice{
+      l
+      | actors: l.actors |> Enum.reject(fn {_k, v} -> v == [] end) |> Enum.into(%{}),
+        providers:
+          l.providers |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{})
+    }
+  end
+
+  defp record_host(l = %Lattice{}, source_host, labels, stamp) do
+    host =
+      Map.get(l.hosts, source_host, %Host{
+        id: source_host,
+        labels: labels,
+        first_seen: timestamp_from_iso8601(stamp)
+      })
+
+    # Every time we see a host, we set the last seen stamp
+    # and bump it to healthy (TODO: support aggregate status based on
+    # host contents)
+    host =
+      Map.merge(
+        host,
+        %{
+          last_seen: timestamp_from_iso8601(stamp),
+          status: :healthy
+        }
+      )
 
     %Lattice{l | hosts: Map.put(l.hosts, source_host, host)}
   end

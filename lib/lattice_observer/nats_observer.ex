@@ -37,6 +37,16 @@ defmodule LatticeObserver.NatsObserver do
     GenServer.call(pid, :get_prefix)
   end
 
+  @spec get_hosts(pid) :: [LatticeObserver.Observed.Host.t()]
+  def get_hosts(pid) do
+    GenServer.call(pid, :get_hosts)
+  end
+
+  @spec get_observed_lattice(pid) :: LatticeObserver.Observed.Lattice.t()
+  def get_observed_lattice(pid) do
+    GenServer.call(pid, :get_lattice)
+  end
+
   @impl true
   def handle_cast({:handle_event, event}, state) do
     case Cloudevents.from_map(event) do
@@ -57,7 +67,17 @@ defmodule LatticeObserver.NatsObserver do
   end
 
   @impl true
+  def handle_call(:get_lattice, _from, state) do
+    {:reply, state.lc, state}
+  end
+
+  @impl true
   def handle_call(:get_prefix, _from, state) do
     {:reply, state.lattice_prefix, state}
+  end
+
+  @impl true
+  def handle_call(:get_hosts, _from, state) do
+    {:reply, state.lc.hosts |> Map.values(), state}
   end
 end
