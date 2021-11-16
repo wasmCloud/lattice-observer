@@ -51,10 +51,10 @@ defmodule LatticeObserver.Observed.Lattice do
           linkdefs: [LinkDefinition.t()],
           instance_tracking: instance_trackmap(),
           refmap: refmap(),
-          parameters: Parameters.t()
+          parameters: [Parameters.t()]
         }
 
-  @spec new :: t()
+  @spec new(keyword) :: t()
   def new(parameters \\ []) do
     %Lattice{
       actors: %{},
