@@ -24,7 +24,7 @@ defmodule LatticeObserver.NatsObserver do
     {:ok, _super} = Gnat.ConsumerSupervisor.start_link(cs_settings, [])
 
     state = %{
-      lc: LatticeObserver.Observed.Lattice.new(),
+      lc: LatticeObserver.Observed.Lattice.new(Map.get(settings, :lattice_parameters, [])),
       lattice_prefix: Map.get(settings, :lattice_prefix),
       module: Map.get(settings, :module)
     }
@@ -47,6 +47,14 @@ defmodule LatticeObserver.NatsObserver do
     GenServer.call(pid, :get_lattice)
   end
 
+  @doc """
+  Instructs the lattice observer to self-inject a decay tick, evaluating
+  the age of various observed entities against the lattice's decay parameters
+  """
+  def do_decay(pid) do
+    GenServer.cast(pid, :do_decay)
+  end
+
   @impl true
   def handle_cast({:handle_event, event}, state) do
     case Cloudevents.from_map(event) do
@@ -64,6 +72,17 @@ defmodule LatticeObserver.NatsObserver do
         Logger.error("Failed to decode cloud event: #{inspect(error)}")
         {:noreply, state}
     end
+  end
+
+  @impl true
+  def handle_cast(:do_decay, state) do
+    tick = LatticeObserver.CloudEvent.new_synthetic(%{}, "decay_ticked", "none")
+
+    state = %{
+      lc: state.lc |> LatticeObserver.Observed.Lattice.apply_event(tick)
+    }
+
+    {:noreply, state}
   end
 
   @impl true

@@ -13,4 +13,19 @@ defmodule LatticeObserver.CloudEvent do
     }
     |> Cloudevents.from_map!()
   end
+
+  def new_synthetic(data, event_type, host) do
+    stamp = DateTime.utc_now() |> DateTime.to_iso8601()
+
+    %{
+      specversion: "1.0",
+      time: stamp,
+      type: "com.wasmcloud.synthetic.#{event_type}",
+      source: "#{host}",
+      datacontenttype: "application/json",
+      id: UUID.uuid4(),
+      data: data
+    }
+    |> Cloudevents.from_map!()
+  end
 end
