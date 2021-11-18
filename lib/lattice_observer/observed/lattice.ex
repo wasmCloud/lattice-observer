@@ -83,26 +83,28 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{"actors" => _actors, "providers" => _providers, "labels" => labels},
+          data: data,
           datacontenttype: "application/json",
           source: source_host,
           time: stamp,
           type: "com.wasmcloud.lattice.host_heartbeat"
         }
       ) do
+    labels = Map.get(data, "labels", %{})
     record_host(l, source_host, labels, stamp)
   end
 
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{"labels" => labels},
+          data: data,
           datacontenttype: "application/json",
           source: source_host,
           time: stamp,
           type: "com.wasmcloud.lattice.host_started"
         }
       ) do
+    labels = Map.get(data, "labels", %{})
     record_host(l, source_host, labels, stamp)
   end
 
@@ -122,8 +124,8 @@ defmodule LatticeObserver.Observed.Lattice do
         %Cloudevents.Format.V_1_0.Event{
           data: %{
             "public_key" => _public_key,
-            "link_name" => _link_name,
-            "annotations" => _annotations
+            "link_name" => _link_name
+            # annotations => ...
           },
           datacontenttype: "application/json",
           source: _source_host,
@@ -138,92 +140,101 @@ defmodule LatticeObserver.Observed.Lattice do
         %Cloudevents.Format.V_1_0.Event{
           data: %{
             "public_key" => _public_key,
-            "link_name" => _link_name,
-            "annotations" => _annotations
+            "link_name" => _link_name
+            # "annotations" => _annotations
           },
           datacontenttype: "application/json",
           source: _source_host,
           type: "com.wasmcloud.lattice.health_check_failed"
         }
       ) do
+    # TODO update status of entity that failed check
     l
   end
 
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{
-            "public_key" => pk,
-            "link_name" => link_name,
-            "contract_id" => contract_id,
-            "instance_id" => instance_id,
-            "annotations" => %{
-              @annotation_app_spec => spec
-            }
-          },
+          data:
+            %{
+              "public_key" => pk,
+              "link_name" => link_name,
+              "contract_id" => contract_id,
+              "instance_id" => instance_id
+              # "annotations" => %{
+              #  @annotation_app_spec => spec
+            } = d,
           time: stamp,
           source: source_host,
           datacontenttype: "application/json",
           type: "com.wasmcloud.lattice.provider_started"
         }
       ) do
+    annotations = Map.get(d, "annotations", %{})
+    spec = Map.get(annotations, @annotation_app_spec, "")
     put_provider_instance(l, source_host, pk, link_name, contract_id, instance_id, spec, stamp)
   end
 
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{
-            "link_name" => link_name,
-            "public_key" => pk,
-            "instance_id" => instance_id,
-            "annotations" => %{
-              @annotation_app_spec => spec
-            }
-          },
+          data:
+            %{
+              "link_name" => link_name,
+              "public_key" => pk,
+              "instance_id" => instance_id
+              # "annotations" => %{
+              #  @annotation_app_spec => spec
+            } = d,
           datacontenttype: "application/json",
           source: source_host,
           time: _stamp,
           type: "com.wasmcloud.lattice.provider_stopped"
         }
       ) do
+    annotations = Map.get(d, "annotations", %{})
+    spec = Map.get(annotations, @annotation_app_spec, "")
     remove_provider_instance(l, source_host, pk, link_name, instance_id, spec)
   end
 
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{
-            "public_key" => pk,
-            "instance_id" => instance_id,
-            "annotations" => %{
-              @annotation_app_spec => spec
-            }
-          },
+          data:
+            %{
+              "public_key" => pk,
+              "instance_id" => instance_id
+              # "annotations" => %{
+              #  @annotation_app_spec => spec
+              # }
+            } = d,
           datacontenttype: "application/json",
           source: source_host,
           type: "com.wasmcloud.lattice.actor_stopped"
         }
       ) do
+    spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
     remove_actor_instance(l, source_host, pk, instance_id, spec)
   end
 
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
-          data: %{
-            "public_key" => pk,
-            "instance_id" => instance_id,
-            "annotations" => %{
-              @annotation_app_spec => spec
-            }
-          },
+          data:
+            %{
+              "public_key" => pk,
+              "instance_id" => instance_id
+              # "annotations" => %{
+              #  @annotation_app_spec => spec
+              # }
+            } = d,
           source: source_host,
           datacontenttype: "application/json",
           time: stamp,
           type: "com.wasmcloud.lattice.actor_started"
         }
       ) do
+    spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
     put_actor_instance(l, source_host, pk, instance_id, spec, stamp)
   end
 

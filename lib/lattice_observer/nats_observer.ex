@@ -63,7 +63,13 @@ defmodule LatticeObserver.NatsObserver do
         nstate = %{state | lc: LatticeObserver.Observed.Lattice.apply_event(state.lc, evt)}
 
         if nstate != state do
-          LatticeObserver.Observer.execute(state.module, nstate.lc, evt, state.lattice_prefix)
+          LatticeObserver.Observer.execute(
+            state.module,
+            state.lc,
+            nstate.lc,
+            evt,
+            state.lattice_prefix
+          )
         end
 
         {:noreply, nstate}
@@ -78,11 +84,22 @@ defmodule LatticeObserver.NatsObserver do
   def handle_cast(:do_decay, state) do
     tick = LatticeObserver.CloudEvent.new_synthetic(%{}, "decay_ticked", "none")
 
-    state = %{
-      lc: state.lc |> LatticeObserver.Observed.Lattice.apply_event(tick)
+    nstate = %{
+      state
+      | lc: state.lc |> LatticeObserver.Observed.Lattice.apply_event(tick)
     }
 
-    {:noreply, state}
+    if nstate != state do
+      LatticeObserver.Observer.execute(
+        state.module,
+        state.lc,
+        nstate.lc,
+        tick,
+        state.lattice_prefix
+      )
+    end
+
+    {:noreply, nstate}
   end
 
   @impl true

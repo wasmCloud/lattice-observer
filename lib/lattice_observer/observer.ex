@@ -2,7 +2,8 @@ defmodule LatticeObserver.Observer do
   require Logger
 
   @callback state_changed(
-              state :: LatticeObserver.Observed.Lattice.t(),
+              old_state :: LatticeObserver.Observed.Lattice.t(),
+              new_state :: LatticeObserver.Observed.Lattice.t(),
               event :: term,
               lattice_prefix :: String.t()
             ) :: :ok
@@ -13,9 +14,9 @@ defmodule LatticeObserver.Observer do
     end
   end
 
-  def execute(module, state, event, lattice_prefix) do
+  def execute(module, old_state, new_state, event, lattice_prefix) do
     try do
-      apply(module, :state_changed, [state, event, lattice_prefix])
+      apply(module, :state_changed, [old_state, new_state, event, lattice_prefix])
     rescue
       e ->
         Logger.error("Failed to invoke #{module} state changed callback: #{e}")
