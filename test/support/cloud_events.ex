@@ -11,6 +11,32 @@ defmodule TestSupport.CloudEvents do
     |> LatticeObserver.CloudEvent.new("actor_stopped", host)
   end
 
+  def host_started(host, labels) do
+    %{
+      "labels" => labels
+    }
+    |> LatticeObserver.CloudEvent.new("host_started", host)
+  end
+
+  def host_stopped(host) do
+    %{} |> LatticeObserver.CloudEvent.new("host_stopped", host)
+  end
+
+  def decay_tick(time) do
+    stamp = time |> DateTime.to_iso8601()
+
+    %{
+      specversion: "1.0",
+      time: stamp,
+      type: "com.wasmcloud.synthetic.decay_ticked",
+      source: "none",
+      datacontenttype: "application/json",
+      id: UUID.uuid4(),
+      data: nil
+    }
+    |> Cloudevents.from_map!()
+  end
+
   def provider_started(pk, contract_id, link_name, instance_id, spec, host) do
     %{
       "public_key" => pk,
