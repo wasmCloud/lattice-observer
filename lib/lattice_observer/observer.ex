@@ -19,7 +19,7 @@ defmodule LatticeObserver.Observer do
       apply(module, :state_changed, [old_state, new_state, event, lattice_prefix])
     rescue
       e ->
-        Logger.error("Failed to invoke #{module} state changed callback: #{e}")
+        Logger.error("Failed to invoke #{module} state changed callback: #{inspect(e)}")
     end
   end
 end
