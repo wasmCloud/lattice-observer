@@ -1,8 +1,44 @@
 defmodule TestSupport.CloudEvents do
   @appspec "wasmcloud.dev/appspec"
 
-  def actor_started(pk, instance_id, spec, host) do
-    %{"public_key" => pk, "instance_id" => instance_id, "annotations" => %{@appspec => spec}}
+  @spec actor_started(any, any, any, any, any) :: %{
+          :__struct__ =>
+            Cloudevents.Format.V_0_1.Event
+            | Cloudevents.Format.V_0_2.Event
+            | Cloudevents.Format.V_1_0.Event,
+          :data => any,
+          :extensions => %{optional(binary) => any},
+          :source => binary,
+          optional(:cloudEventsVersion) => <<_::24>>,
+          optional(:contentType) => nil | binary,
+          optional(:contenttype) => nil | binary,
+          optional(:datacontenttype) => nil | binary,
+          optional(:dataschema) => nil | binary,
+          optional(:eventID) => binary,
+          optional(:eventTime) => nil | binary,
+          optional(:eventType) => binary,
+          optional(:id) => binary,
+          optional(:schemaURL) => nil | binary,
+          optional(:schemaurl) => nil | binary,
+          optional(:specversion) => <<_::24>>,
+          optional(:subject) => nil | binary,
+          optional(:time) => nil | binary,
+          optional(:type) => binary
+        }
+  def actor_started(pk, instance_id, spec, host, name \\ "Test Actor") do
+    %{
+      "public_key" => pk,
+      "instance_id" => instance_id,
+      "annotations" => %{@appspec => spec},
+      "claims" => %{
+        "name" => name,
+        "caps" => ["test", "test2"],
+        "version" => "1.0",
+        "revision" => 0,
+        "tags" => [],
+        "issuer" => "ATESTxxx"
+      }
+    }
     |> LatticeObserver.CloudEvent.new("actor_started", host)
   end
 
@@ -43,7 +79,14 @@ defmodule TestSupport.CloudEvents do
       "instance_id" => instance_id,
       "link_name" => link_name,
       "contract_id" => contract_id,
-      "annotations" => %{@appspec => spec}
+      "annotations" => %{@appspec => spec},
+      "claims" => %{
+        "name" => "test provider",
+        "version" => "1.0",
+        "revision" => 2,
+        "issuer" => "ATESTxxx",
+        "tags" => ["a", "b"]
+      }
     }
     |> LatticeObserver.CloudEvent.new("provider_started", host)
   end

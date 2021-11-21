@@ -7,7 +7,7 @@ defmodule LatticeObserver.Observed.Lattice do
   lattice events
   """
   alias __MODULE__
-  alias LatticeObserver.Observed.{Provider, Host, Instance, LinkDefinition, Decay}
+  alias LatticeObserver.Observed.{Provider, Host, Actor, Instance, LinkDefinition, Decay}
 
   require Logger
 
@@ -20,7 +20,7 @@ defmodule LatticeObserver.Observed.Lattice do
   """
   @type provider_key :: {String.t(), String.t()}
 
-  @type actormap :: %{required(String.t()) => [Instance.t()]}
+  @type actormap :: %{required(String.t()) => [Actor.t()]}
   @type providermap :: %{required(provider_key()) => Provider.t()}
   @type hostmap :: %{required(String.t()) => Host.t()}
   # map between OCI image URL/imageref and public key
@@ -123,8 +123,8 @@ defmodule LatticeObserver.Observed.Lattice do
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
           data: %{
-            "public_key" => _public_key,
-            "link_name" => _link_name
+            "public_key" => _public_key
+            # "link_name" => _link_name
             # annotations => ...
           },
           datacontenttype: "application/json",
@@ -139,8 +139,8 @@ defmodule LatticeObserver.Observed.Lattice do
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
           data: %{
-            "public_key" => _public_key,
-            "link_name" => _link_name
+            "public_key" => _public_key
+            # "link_name" => _link_name
             # "annotations" => _annotations
           },
           datacontenttype: "application/json",
@@ -172,7 +172,19 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     annotations = Map.get(d, "annotations", %{})
     spec = Map.get(annotations, @annotation_app_spec, "")
-    put_provider_instance(l, source_host, pk, link_name, contract_id, instance_id, spec, stamp)
+    claims = Map.get(d, "claims", %{})
+
+    put_provider_instance(
+      l,
+      source_host,
+      pk,
+      link_name,
+      contract_id,
+      instance_id,
+      spec,
+      stamp,
+      claims
+    )
   end
 
   def apply_event(
@@ -235,7 +247,8 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
-    put_actor_instance(l, source_host, pk, instance_id, spec, stamp)
+    claims = Map.get(d, "claims", %{})
+    put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
   end
 
   def apply_event(
@@ -343,40 +356,57 @@ defmodule LatticeObserver.Observed.Lattice do
     }
   end
 
-  defp remove_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec) do
-    instances = Map.get(l.actors, pk, [])
+  defp remove_actor_instance(l = %Lattice{}, _host_id, pk, instance_id, _spec) do
+    actor = l.actors[pk]
 
-    instance = %Instance{
-      id: instance_id,
-      host_id: host_id,
-      spec_id: spec
-    }
+    if actor != nil do
+      actor = %Actor{
+        actor
+        | instances: actor.instances |> Enum.reject(fn i -> i.id == instance_id end)
+      }
 
-    actor_instances = Enum.reject(instances, fn tgt_instance -> instance == tgt_instance end)
-    l = %Lattice{l | actors: Map.put(l.actors, pk, actor_instances)}
-    %Lattice{l | instance_tracking: Map.delete(l.instance_tracking, instance.id)}
+      %Lattice{
+        l
+        | actors: Map.put(l.actors, pk, actor),
+          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
+      }
+      |> strip_instanceless_entities()
+    else
+      l
+    end
   end
 
-  defp put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp)
+  defp put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp, claims)
        when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do
-    instances = Map.get(l.actors, pk, [])
+    actor =
+      Map.get(l.actors, pk, %Actor{
+        id: pk,
+        name: Map.get(claims, "name", "unavailable"),
+        capabilities: Map.get(claims, "caps", []),
+        issuer: Map.get(claims, "issuer", ""),
+        tags: Map.get(claims, "tags", []),
+        call_alias: Map.get(claims, "call_alias", ""),
+        instances: []
+      })
 
     instance = %Instance{
       id: instance_id,
       host_id: host_id,
-      spec_id: spec
+      spec_id: spec,
+      version: Map.get(claims, "version", ""),
+      revision: Map.get(claims, "revision", 0)
     }
 
-    actor_instances =
-      if Enum.member?(instances, instance) do
-        instances
+    actor =
+      if actor.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
+        %{actor | instances: [instance | actor.instances]}
       else
-        [instance | instances]
+        actor
       end
 
     %Lattice{
       l
-      | actors: Map.put(l.actors, pk, actor_instances),
+      | actors: Map.put(l.actors, pk, actor),
         instance_tracking:
           Map.put(l.instance_tracking, instance.id, timestamp_from_iso8601(stamp))
     }
@@ -390,25 +420,34 @@ defmodule LatticeObserver.Observed.Lattice do
          contract_id,
          instance_id,
          spec,
-         stamp
+         stamp,
+         claims
        ) do
-    provider = Map.get(l.providers, {pk, link_name}, Provider.new(pk, link_name, contract_id))
-    instances = provider.instances
+    provider =
+      Map.get(l.providers, {pk, link_name}, %Provider{
+        id: pk,
+        name: Map.get(claims, "name", "unavailable"),
+        issuer: Map.get(claims, "issuer", ""),
+        contract_id: contract_id,
+        tags: Map.get(claims, "tags", []),
+        link_name: link_name,
+        instances: []
+      })
 
     instance = %Instance{
       id: instance_id,
       host_id: source_host,
-      spec_id: spec
+      spec_id: spec,
+      version: Map.get(claims, "version", ""),
+      revision: Map.get(claims, "revision", 0)
     }
 
-    prov_instances =
-      if Enum.member?(instances, instance) do
-        instances
+    provider =
+      if provider.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
+        %{provider | instances: [instance | provider.instances]}
       else
-        [instance | instances]
+        provider
       end
-
-    provider = %{provider | instances: prov_instances}
 
     %Lattice{
       l
@@ -418,29 +457,66 @@ defmodule LatticeObserver.Observed.Lattice do
     }
   end
 
-  defp remove_provider_instance(l, source_host, pk, link_name, instance_id, spec) do
-    provider = Map.get(l.providers, {pk, link_name})
+  defp remove_provider_instance(l, _source_host, pk, link_name, instance_id, _spec) do
+    # actor = l.actors[pk]
 
-    instance = %Instance{
-      id: instance_id,
-      host_id: source_host,
-      spec_id: spec
-    }
+    # if actor != nil do
+    #   actor = %Actor{
+    #     actor
+    #     | instances: actor.instances |> Enum.reject(fn i -> i.id == instance_id end)
+    #   }
 
-    if provider == nil do
-      l
-    else
-      provider_instances =
-        Enum.reject(provider.instances, fn tgt_instance -> instance == tgt_instance end)
+    #   %Lattice{
+    #     l
+    #     | actors: Map.put(l.actors, pk, actor),
+    #       instance_tracking: l.instance_tracking |> Map.delete(instance_id)
+    #   }
+    #   |> strip_instanceless_entities()
+    # else
+    #   l
+    # end
 
-      provider = %Provider{provider | instances: provider_instances}
+    provider = l.providers[{pk, link_name}]
+
+    if provider != nil do
+      provider = %Provider{
+        provider
+        | instances: provider.instances |> Enum.reject(fn i -> i.id == instance_id end)
+      }
 
       %Lattice{
         l
         | providers: Map.put(l.providers, {pk, link_name}, provider),
-          instance_tracking: Map.delete(l.instance_tracking, instance.id)
+          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
       }
+      |> strip_instanceless_entities()
+    else
+      l
     end
+
+    # provider = Map.get(l.providers, {pk, link_name})
+
+    # instance = %Instance{
+    #   id: instance_id,
+    #   host_id: source_host,
+    #   spec_id: spec
+    # }
+
+    # if provider == nil do
+    #   l
+    # else
+    #   provider_instances =
+    #     Enum.reject(provider.instances, fn tgt_instance -> instance == tgt_instance end)
+
+    #   provider = %Provider{provider | instances: provider_instances}
+
+    #   %Lattice{
+    #     l
+    #     | providers: Map.put(l.providers, {pk, link_name}, provider),
+    #       instance_tracking: Map.delete(l.instance_tracking, instance.id)
+    #   }
+    #   |> strip_instanceless_entities()
+    # end
   end
 
   defp remove_host(l = %Lattice{}, source_host) do
@@ -453,7 +529,11 @@ defmodule LatticeObserver.Observed.Lattice do
         actors:
           l.actors
           |> Enum.map(fn {k, v} ->
-            {k, v |> Enum.reject(fn i -> i.host_id == source_host end)}
+            {k,
+             %Actor{
+               v
+               | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
+             }}
           end)
           |> Enum.into(%{}),
         providers:
@@ -474,7 +554,7 @@ defmodule LatticeObserver.Observed.Lattice do
   defp strip_instanceless_entities(l = %Lattice{}) do
     %Lattice{
       l
-      | actors: l.actors |> Enum.reject(fn {_k, v} -> v == [] end) |> Enum.into(%{}),
+      | actors: l.actors |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{}),
         providers:
           l.providers |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{})
     }
@@ -538,7 +618,20 @@ defmodule LatticeObserver.Observed.Lattice do
           %{actor_id: String.t(), instance_id: String.t(), host_id: String.t()}
         ]
   def actors_in_appspec(%Lattice{actors: actors}, appspec) when is_binary(appspec) do
-    for {pk, instances} <- actors,
+    # actors
+    # |> Enum.map(fn {pk, a} ->
+    #   {pk,
+    #    a.instances
+    #    |> Enum.filter(fn i -> in_spec?(i, appspec) end)}
+    # end)
+    # |> Enum.map(fn {pk, i} ->
+    #   %{
+    #     actor_id: pk,
+    #     instance_id: i.id,
+    #     host_id: i.host_id
+    #   }
+    # end)
+    for {pk, %Actor{instances: instances}} <- actors,
         instance <- instances,
         in_spec?(instance, appspec) do
       %{
