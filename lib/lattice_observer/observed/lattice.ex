@@ -124,14 +124,13 @@ defmodule LatticeObserver.Observed.Lattice do
         %Cloudevents.Format.V_1_0.Event{
           data: %{
             "public_key" => _public_key
-            # "link_name" => _link_name
-            # annotations => ...
           },
           datacontenttype: "application/json",
           source: _source_host,
           type: "com.wasmcloud.lattice.health_check_passed"
         }
       ) do
+    # TODO update the status of entity that passed check
     l
   end
 
@@ -140,8 +139,6 @@ defmodule LatticeObserver.Observed.Lattice do
         %Cloudevents.Format.V_1_0.Event{
           data: %{
             "public_key" => _public_key
-            # "link_name" => _link_name
-            # "annotations" => _annotations
           },
           datacontenttype: "application/json",
           source: _source_host,
@@ -161,8 +158,6 @@ defmodule LatticeObserver.Observed.Lattice do
               "link_name" => link_name,
               "contract_id" => contract_id,
               "instance_id" => instance_id
-              # "annotations" => %{
-              #  @annotation_app_spec => spec
             } = d,
           time: stamp,
           source: source_host,
@@ -195,8 +190,6 @@ defmodule LatticeObserver.Observed.Lattice do
               "link_name" => link_name,
               "public_key" => pk,
               "instance_id" => instance_id
-              # "annotations" => %{
-              #  @annotation_app_spec => spec
             } = d,
           datacontenttype: "application/json",
           source: source_host,
@@ -216,9 +209,6 @@ defmodule LatticeObserver.Observed.Lattice do
             %{
               "public_key" => pk,
               "instance_id" => instance_id
-              # "annotations" => %{
-              #  @annotation_app_spec => spec
-              # }
             } = d,
           datacontenttype: "application/json",
           source: source_host,
@@ -236,9 +226,6 @@ defmodule LatticeObserver.Observed.Lattice do
             %{
               "public_key" => pk,
               "instance_id" => instance_id
-              # "annotations" => %{
-              #  @annotation_app_spec => spec
-              # }
             } = d,
           source: source_host,
           datacontenttype: "application/json",
@@ -458,24 +445,6 @@ defmodule LatticeObserver.Observed.Lattice do
   end
 
   defp remove_provider_instance(l, _source_host, pk, link_name, instance_id, _spec) do
-    # actor = l.actors[pk]
-
-    # if actor != nil do
-    #   actor = %Actor{
-    #     actor
-    #     | instances: actor.instances |> Enum.reject(fn i -> i.id == instance_id end)
-    #   }
-
-    #   %Lattice{
-    #     l
-    #     | actors: Map.put(l.actors, pk, actor),
-    #       instance_tracking: l.instance_tracking |> Map.delete(instance_id)
-    #   }
-    #   |> strip_instanceless_entities()
-    # else
-    #   l
-    # end
-
     provider = l.providers[{pk, link_name}]
 
     if provider != nil do
@@ -493,30 +462,6 @@ defmodule LatticeObserver.Observed.Lattice do
     else
       l
     end
-
-    # provider = Map.get(l.providers, {pk, link_name})
-
-    # instance = %Instance{
-    #   id: instance_id,
-    #   host_id: source_host,
-    #   spec_id: spec
-    # }
-
-    # if provider == nil do
-    #   l
-    # else
-    #   provider_instances =
-    #     Enum.reject(provider.instances, fn tgt_instance -> instance == tgt_instance end)
-
-    #   provider = %Provider{provider | instances: provider_instances}
-
-    #   %Lattice{
-    #     l
-    #     | providers: Map.put(l.providers, {pk, link_name}, provider),
-    #       instance_tracking: Map.delete(l.instance_tracking, instance.id)
-    #   }
-    #   |> strip_instanceless_entities()
-    # end
   end
 
   defp remove_host(l = %Lattice{}, source_host) do
@@ -618,19 +563,6 @@ defmodule LatticeObserver.Observed.Lattice do
           %{actor_id: String.t(), instance_id: String.t(), host_id: String.t()}
         ]
   def actors_in_appspec(%Lattice{actors: actors}, appspec) when is_binary(appspec) do
-    # actors
-    # |> Enum.map(fn {pk, a} ->
-    #   {pk,
-    #    a.instances
-    #    |> Enum.filter(fn i -> in_spec?(i, appspec) end)}
-    # end)
-    # |> Enum.map(fn {pk, i} ->
-    #   %{
-    #     actor_id: pk,
-    #     instance_id: i.id,
-    #     host_id: i.host_id
-    #   }
-    # end)
     for {pk, %Actor{instances: instances}} <- actors,
         instance <- instances,
         in_spec?(instance, appspec) do
@@ -662,10 +594,6 @@ defmodule LatticeObserver.Observed.Lattice do
         instance_id: instance.id
       }
     end
-  end
-
-  def providers_in_appspec(%Lattice{}, _appspec) do
-    []
   end
 
   def lookup_linkdef(%Lattice{linkdefs: linkdefs}, actor_id, provider_id, link_name) do
