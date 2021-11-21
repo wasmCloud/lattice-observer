@@ -275,7 +275,7 @@ defmodule LatticeObserver.Observed.Lattice do
 
   def apply_event(l = %Lattice{}, %Cloudevents.Format.V_1_0.Event{
         data: %{
-          "image_ref" => image_ref,
+          "oci_url" => image_ref,
           "public_key" => public_key
         },
         source: _source_host,
@@ -287,7 +287,7 @@ defmodule LatticeObserver.Observed.Lattice do
 
   def apply_event(l = %Lattice{}, %Cloudevents.Format.V_1_0.Event{
         data: %{
-          "image_ref" => image_ref
+          "oci_url" => image_ref
         },
         source: _source_host,
         datacontenttype: "application/json",
