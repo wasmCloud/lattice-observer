@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.ActorsTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.{Lattice, Instance}
+  alias LatticeObserver.Observed.{Lattice, Instance, Actor}
   alias TestSupport.CloudEvents
 
   @test_spec "testapp"
@@ -19,13 +19,23 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       assert l == %Lattice{
                Lattice.new()
                | actors: %{
-                   "Mxxx" => [
-                     %Instance{
-                       host_id: "Nxxx",
-                       id: "abc123",
-                       spec_id: "testapp"
-                     }
-                   ]
+                   "Mxxx" => %Actor{
+                     call_alias: "",
+                     capabilities: ["test", "test2"],
+                     id: "Mxxx",
+                     instances: [
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc123",
+                         revision: 0,
+                         spec_id: "testapp",
+                         version: "1.0"
+                       }
+                     ],
+                     issuer: "ATESTxxx",
+                     name: "Test Actor",
+                     tags: []
+                   }
                  },
                  instance_tracking: %{
                    "abc123" => stamp1
@@ -39,7 +49,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
 
       assert l == %Lattice{
                Lattice.new()
-               | actors: %{"Mxxx" => []}
+               | actors: %{}
              }
     end
 
@@ -55,10 +65,30 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       assert l == %Lattice{
                Lattice.new()
                | actors: %{
-                   "Mxxx" => [
-                     %Instance{host_id: "Nxxx", id: "abc345", spec_id: "othertestapp"},
-                     %Instance{host_id: "Nxxx", id: "abc123", spec_id: "testapp"}
-                   ]
+                   "Mxxx" => %Actor{
+                     call_alias: "",
+                     capabilities: ["test", "test2"],
+                     id: "Mxxx",
+                     instances: [
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc345",
+                         revision: 0,
+                         spec_id: "othertestapp",
+                         version: "1.0"
+                       },
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc123",
+                         revision: 0,
+                         spec_id: "testapp",
+                         version: "1.0"
+                       }
+                     ],
+                     issuer: "ATESTxxx",
+                     name: "Test Actor",
+                     tags: []
+                   }
                  },
                  instance_tracking: %{
                    "abc123" => stamp1,
@@ -76,13 +106,23 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       assert l == %LatticeObserver.Observed.Lattice{
                Lattice.new()
                | actors: %{
-                   "Mxxx" => [
-                     %LatticeObserver.Observed.Instance{
-                       host_id: "Nxxx",
-                       id: "abc345",
-                       spec_id: "othertestapp"
-                     }
-                   ]
+                   "Mxxx" => %Actor{
+                     call_alias: "",
+                     capabilities: ["test", "test2"],
+                     id: "Mxxx",
+                     instances: [
+                       %Instance{
+                         host_id: "Nxxx",
+                         id: "abc345",
+                         revision: 0,
+                         spec_id: "othertestapp",
+                         version: "1.0"
+                       }
+                     ],
+                     issuer: "ATESTxxx",
+                     name: "Test Actor",
+                     tags: []
+                   }
                  },
                  instance_tracking: %{
                    "abc345" => stamp2

@@ -3,7 +3,7 @@ defmodule LatticeObserver.Observed.Provider do
   alias LatticeObserver.Observed.Instance
 
   @enforce_keys [:id, :contract_id, :link_name, :instances]
-  defstruct [:id, :contract_id, :link_name, :instances]
+  defstruct [:id, :name, :issuer, :version, :contract_id, :tags, :link_name, :instances]
 
   @typedoc """
   A representation of an observed capability provider. Providers are uniquely
@@ -12,7 +12,10 @@ defmodule LatticeObserver.Observed.Provider do
   """
   @type t :: %Provider{
           id: String.t(),
+          name: String.t(),
+          issuer: String.t(),
           contract_id: String.t(),
+          tags: [String.t()],
           link_name: String.t(),
           instances: [Instance.t()]
         }

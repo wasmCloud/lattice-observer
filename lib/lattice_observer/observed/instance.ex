@@ -2,7 +2,7 @@ defmodule LatticeObserver.Observed.Instance do
   alias __MODULE__
 
   @enforce_keys [:id, :host_id, :spec_id]
-  defstruct [:id, :host_id, :spec_id]
+  defstruct [:id, :host_id, :spec_id, :version, :revision]
 
   @typedoc """
   An instance represents an observation of a unit of scalability within the lattice. Instances
@@ -13,6 +13,8 @@ defmodule LatticeObserver.Observed.Instance do
   @type t :: %Instance{
           id: String.t(),
           host_id: String.t(),
-          spec_id: String.t()
+          spec_id: String.t(),
+          version: String.t(),
+          revision: Integer.t()
         }
 end
