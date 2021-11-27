@@ -13,7 +13,7 @@ defmodule LatticeObserver.Observed.Lattice do
 
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
-  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking, :parameters]
+  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking, :parameters, :ocimap]
 
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
