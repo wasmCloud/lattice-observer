@@ -86,6 +86,92 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       assert l.hosts[@test_host].labels == %{baz: "biz", foo: "bar"}
       assert l.hosts[@test_host].status == :healthy
       assert l.hosts[@test_host].last_seen == stamp2
+
+      hb3 =
+        CloudEvents.host_heartbeat(
+          @test_host,
+          %{foo: "bar"},
+          [
+            %{
+              "public_key" => "Mxxxx",
+              "instance_id" => "iid1"
+            },
+            %{
+              "public_key" => "Mxxxy",
+              "instance_id" => "iid2"
+            }
+          ],
+          [
+            %{
+              "public_key" => "Vxxxxx",
+              "instance_id" => "iid3",
+              "contract_id" => "wasmcloud:test",
+              "link_name" => "default"
+            }
+          ]
+        )
+
+      l = Lattice.apply_event(Lattice.new(), hb3)
+
+      assert l.actors == %{
+               "Mxxxx" => %LatticeObserver.Observed.Actor{
+                 call_alias: "",
+                 capabilities: [],
+                 id: "Mxxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "iid1",
+                     revision: 0,
+                     spec_id: "",
+                     version: ""
+                   }
+                 ],
+                 issuer: "",
+                 name: "unavailable",
+                 tags: [],
+                 version: nil
+               },
+               "Mxxxy" => %LatticeObserver.Observed.Actor{
+                 call_alias: "",
+                 capabilities: [],
+                 id: "Mxxxy",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "iid2",
+                     revision: 0,
+                     spec_id: "",
+                     version: ""
+                   }
+                 ],
+                 issuer: "",
+                 name: "unavailable",
+                 tags: [],
+                 version: nil
+               }
+             }
+
+      assert l.providers == %{
+               {"Vxxxxx", "default"} => %LatticeObserver.Observed.Provider{
+                 contract_id: "wasmcloud:test",
+                 id: "Vxxxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "iid3",
+                     revision: 0,
+                     spec_id: "",
+                     version: ""
+                   }
+                 ],
+                 issuer: "",
+                 link_name: "default",
+                 name: "unavailable",
+                 tags: [],
+                 version: nil
+               }
+             }
     end
   end
 end

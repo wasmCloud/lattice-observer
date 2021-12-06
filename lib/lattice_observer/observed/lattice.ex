@@ -90,8 +90,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.host_heartbeat"
         }
       ) do
-    labels = Map.get(data, "labels", %{})
-    record_host(l, source_host, labels, stamp)
+    record_heartbeat(l, source_host, stamp, data)
   end
 
   def apply_event(
@@ -236,6 +235,19 @@ defmodule LatticeObserver.Observed.Lattice do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
     put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actor_start_failed"
+        }
+      ) do
+    # This does not currently affect state, but shouldn't generate a warning either
+    l
   end
 
   def apply_event(
@@ -503,6 +515,35 @@ defmodule LatticeObserver.Observed.Lattice do
         providers:
           l.providers |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{})
     }
+  end
+
+  defp record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
+    labels = Map.get(data, "labels", %{})
+    l = record_host(l, source_host, labels, stamp)
+
+    l =
+      List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
+        # TODO - once the host can emit annotations we can pull the spec
+        put_actor_instance(acc, source_host, x["public_key"], x["instance_id"], "", stamp, %{})
+      end)
+
+    l =
+      List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
+        # TODO - once the host emits annotations we can pull the spec
+        put_provider_instance(
+          acc,
+          source_host,
+          x["public_key"],
+          x["link_name"],
+          x["contract_id"],
+          x["instance_id"],
+          "",
+          stamp,
+          %{}
+        )
+      end)
+
+    l
   end
 
   defp record_host(l = %Lattice{}, source_host, labels, stamp) do
