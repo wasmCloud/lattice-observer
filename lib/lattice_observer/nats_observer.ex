@@ -62,15 +62,13 @@ defmodule LatticeObserver.NatsObserver do
         Logger.debug("Processing event #{evt.type}")
         nstate = %{state | lc: LatticeObserver.Observed.Lattice.apply_event(state.lc, evt)}
 
-        if nstate != state do
-          LatticeObserver.Observer.execute(
-            state.module,
-            state.lc,
-            nstate.lc,
-            evt,
-            state.lattice_prefix
-          )
-        end
+        LatticeObserver.Observer.execute(
+          state.module,
+          state.lc,
+          nstate.lc,
+          evt,
+          state.lattice_prefix
+        )
 
         {:noreply, nstate}
 
@@ -89,15 +87,13 @@ defmodule LatticeObserver.NatsObserver do
       | lc: state.lc |> LatticeObserver.Observed.Lattice.apply_event(tick)
     }
 
-    if nstate != state do
-      LatticeObserver.Observer.execute(
-        state.module,
-        state.lc,
-        nstate.lc,
-        tick,
-        state.lattice_prefix
-      )
-    end
+    LatticeObserver.Observer.execute(
+      state.module,
+      state.lc,
+      nstate.lc,
+      tick,
+      state.lattice_prefix
+    )
 
     {:noreply, nstate}
   end
