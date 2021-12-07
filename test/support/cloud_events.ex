@@ -119,7 +119,7 @@ defmodule TestSupport.CloudEvents do
       "contract_id" => contract_id,
       "values" => values
     }
-    |> LatticeObserver.CloudEvent.new("linkdef_put", host)
+    |> LatticeObserver.CloudEvent.new("linkdef_set", host)
   end
 
   def linkdef_del(actor_id, provider_id, link_name, contract_id, host) do
@@ -129,6 +129,6 @@ defmodule TestSupport.CloudEvents do
       "link_name" => link_name,
       "contract_id" => contract_id
     }
-    |> LatticeObserver.CloudEvent.new("linkdef_del", host)
+    |> LatticeObserver.CloudEvent.new("linkdef_deleted", host)
   end
 end

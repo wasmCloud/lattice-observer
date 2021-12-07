@@ -262,7 +262,7 @@ defmodule LatticeObserver.Observed.Lattice do
           },
           source: _source_host,
           datacontenttype: "application/json",
-          type: "com.wasmcloud.lattice.linkdef_put"
+          type: "com.wasmcloud.lattice.linkdef_set"
         }
       ) do
     put_linkdef(l, actor_id, link_name, provider_id, contract_id, values)
@@ -279,7 +279,7 @@ defmodule LatticeObserver.Observed.Lattice do
           },
           source: _source_host,
           datacontenttype: "application/json",
-          type: "com.wasmcloud.lattice.linkdef_del"
+          type: "com.wasmcloud.lattice.linkdef_deleted"
         }
       ) do
     del_linkdef(l, actor_id, link_name, provider_id)
