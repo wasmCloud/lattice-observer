@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.ActorsTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.{Lattice, Instance, Actor}
+  alias LatticeObserver.Observed.{Lattice, Instance, Actor, EventProcessor}
   alias TestSupport.CloudEvents
 
   @test_spec "testapp"
@@ -12,7 +12,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       start = CloudEvents.actor_started("Mxxx", "abc123", @test_spec, @test_host)
       l = Lattice.new()
       l = Lattice.apply_event(l, start)
-      stamp1 = Lattice.timestamp_from_iso8601(start.time)
+      stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
       # ensure idempotence
       l = Lattice.apply_event(l, start)
 
@@ -59,8 +59,8 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       l = Lattice.apply_event(l, start)
       start2 = CloudEvents.actor_started("Mxxx", "abc345", @test_spec_2, @test_host)
       l = Lattice.apply_event(l, start2)
-      stamp1 = Lattice.timestamp_from_iso8601(start.time)
-      stamp2 = Lattice.timestamp_from_iso8601(start2.time)
+      stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
+      stamp2 = EventProcessor.timestamp_from_iso8601(start2.time)
 
       assert l == %Lattice{
                Lattice.new()

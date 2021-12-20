@@ -7,13 +7,32 @@ defmodule LatticeObserver.Observed.Lattice do
   lattice events
   """
   alias __MODULE__
-  alias LatticeObserver.Observed.{Provider, Host, Actor, Instance, LinkDefinition, Decay}
+
+  alias LatticeObserver.Observed.{
+    Provider,
+    Host,
+    Actor,
+    Instance,
+    LinkDefinition,
+    Decay,
+    EventProcessor,
+    Invocation
+  }
 
   require Logger
 
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
-  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking, :parameters]
+  defstruct [
+    :actors,
+    :providers,
+    :hosts,
+    :linkdefs,
+    :refmap,
+    :instance_tracking,
+    :parameters,
+    :invocation_log
+  ]
 
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
@@ -51,10 +70,11 @@ defmodule LatticeObserver.Observed.Lattice do
           linkdefs: [LinkDefinition.t()],
           instance_tracking: instance_trackmap(),
           refmap: refmap(),
+          invocation_log: Invocation.invocationlog_map(),
           parameters: [Parameters.t()]
         }
 
-  @spec new(keyword) :: t()
+  @spec new(Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
   def new(parameters \\ []) do
     %Lattice{
       actors: %{},
@@ -63,6 +83,7 @@ defmodule LatticeObserver.Observed.Lattice do
       linkdefs: [],
       instance_tracking: %{},
       refmap: %{},
+      invocation_log: %{},
       parameters: %Parameters{
         host_status_decay_rate_seconds:
           Keyword.get(parameters, :host_status_decay_rate_seconds, 35)
@@ -90,7 +111,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.host_heartbeat"
         }
       ) do
-    record_heartbeat(l, source_host, stamp, data)
+    EventProcessor.record_heartbeat(l, source_host, stamp, data)
   end
 
   def apply_event(
@@ -104,7 +125,61 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     labels = Map.get(data, "labels", %{})
-    record_host(l, source_host, labels, stamp)
+    EventProcessor.record_host(l, source_host, labels, stamp)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.invocation_succeeded",
+          data: %{
+            "source" =>
+              %{
+                "public_key" => _pk,
+                "contract_id" => _cid,
+                "link_name" => _ln
+              } = source,
+            "dest" =>
+              %{
+                "public_key" => _pk2,
+                "contract_id" => _cid2,
+                "link_name" => _ln2
+              } = dest,
+            "operation" => operation,
+            "bytes" => bytes
+          }
+        }
+      ) do
+    Invocation.record_invocation_success(l, source, dest, operation, bytes)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.invocation_failed",
+          data: %{
+            "source" =>
+              %{
+                "public_key" => _pk,
+                "contract_id" => _cid,
+                "link_name" => _ln
+              } = source,
+            "dest" =>
+              %{
+                "public_key" => _pk2,
+                "contract_id" => _cid2,
+                "link_name" => _ln2
+              } = dest,
+            "operation" => operation,
+            "bytes" => bytes
+          }
+        }
+      ) do
+    Invocation.record_invocation_failed(l, source, dest, operation, bytes)
   end
 
   def apply_event(
@@ -115,7 +190,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.host_stopped"
         }
       ) do
-    remove_host(l, source_host)
+    EventProcessor.remove_host(l, source_host)
   end
 
   def apply_event(
@@ -168,7 +243,7 @@ defmodule LatticeObserver.Observed.Lattice do
     spec = Map.get(annotations, @annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
 
-    put_provider_instance(
+    EventProcessor.put_provider_instance(
       l,
       source_host,
       pk,
@@ -211,7 +286,7 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     annotations = Map.get(d, "annotations", %{})
     spec = Map.get(annotations, @annotation_app_spec, "")
-    remove_provider_instance(l, source_host, pk, link_name, instance_id, spec)
+    EventProcessor.remove_provider_instance(l, source_host, pk, link_name, instance_id, spec)
   end
 
   def apply_event(
@@ -228,7 +303,7 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
-    remove_actor_instance(l, source_host, pk, instance_id, spec)
+    EventProcessor.remove_actor_instance(l, source_host, pk, instance_id, spec)
   end
 
   def apply_event(
@@ -247,7 +322,7 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
-    put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
+    EventProcessor.put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
   end
 
   def apply_event(
@@ -278,7 +353,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.linkdef_set"
         }
       ) do
-    put_linkdef(l, actor_id, link_name, provider_id, contract_id, values)
+    EventProcessor.put_linkdef(l, actor_id, link_name, provider_id, contract_id, values)
   end
 
   def apply_event(
@@ -295,7 +370,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.linkdef_deleted"
         }
       ) do
-    del_linkdef(l, actor_id, link_name, provider_id)
+    EventProcessor.del_linkdef(l, actor_id, link_name, provider_id)
   end
 
   def apply_event(l = %Lattice{}, %Cloudevents.Format.V_1_0.Event{
@@ -327,267 +402,13 @@ defmodule LatticeObserver.Observed.Lattice do
         type: "com.wasmcloud.synthetic.decay_ticked",
         time: stamp
       }) do
-    event_time = timestamp_from_iso8601(stamp)
+    event_time = EventProcessor.timestamp_from_iso8601(stamp)
     Decay.age_hosts(l, event_time)
   end
 
   def apply_event(l = %Lattice{}, evt) do
     Logger.warn("Unexpected event: #{inspect(evt)}")
     l
-  end
-
-  defp put_linkdef(l = %Lattice{}, actor_id, link_name, provider_id, contract_id, values) do
-    case Enum.find(l.linkdefs, fn link ->
-           link.actor_id == actor_id && link.provider_id == provider_id &&
-             link.link_name == link_name
-         end) do
-      nil ->
-        ld = %LinkDefinition{
-          actor_id: actor_id,
-          link_name: link_name,
-          provider_id: provider_id,
-          contract_id: contract_id,
-          values: values
-        }
-
-        %Lattice{l | linkdefs: [ld | l.linkdefs]}
-
-      _ ->
-        l
-    end
-  end
-
-  defp del_linkdef(l = %Lattice{}, actor_id, link_name, provider_id) do
-    %Lattice{
-      l
-      | linkdefs:
-          Enum.reject(l.linkdefs, fn link ->
-            link.actor_id == actor_id && link.link_name == link_name &&
-              link.provider_id == provider_id
-          end)
-    }
-  end
-
-  defp remove_actor_instance(l = %Lattice{}, _host_id, pk, instance_id, _spec) do
-    actor = l.actors[pk]
-
-    if actor != nil do
-      actor = %Actor{
-        actor
-        | instances: actor.instances |> Enum.reject(fn i -> i.id == instance_id end)
-      }
-
-      %Lattice{
-        l
-        | actors: Map.put(l.actors, pk, actor),
-          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
-      }
-      |> strip_instanceless_entities()
-    else
-      l
-    end
-  end
-
-  defp put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp, claims)
-       when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do
-    actor =
-      Map.get(l.actors, pk, %Actor{
-        id: pk,
-        name: Map.get(claims, "name", "unavailable"),
-        capabilities: Map.get(claims, "caps", []),
-        issuer: Map.get(claims, "issuer", ""),
-        tags: Map.get(claims, "tags", []),
-        call_alias: Map.get(claims, "call_alias", ""),
-        instances: []
-      })
-
-    instance = %Instance{
-      id: instance_id,
-      host_id: host_id,
-      spec_id: spec,
-      version: Map.get(claims, "version", ""),
-      revision: Map.get(claims, "revision", 0)
-    }
-
-    actor =
-      if actor.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
-        %{actor | instances: [instance | actor.instances]}
-      else
-        actor
-      end
-
-    %Lattice{
-      l
-      | actors: Map.put(l.actors, pk, actor),
-        instance_tracking:
-          Map.put(l.instance_tracking, instance.id, timestamp_from_iso8601(stamp))
-    }
-  end
-
-  defp put_provider_instance(
-         l = %Lattice{},
-         source_host,
-         pk,
-         link_name,
-         contract_id,
-         instance_id,
-         spec,
-         stamp,
-         claims
-       ) do
-    provider =
-      Map.get(l.providers, {pk, link_name}, %Provider{
-        id: pk,
-        name: Map.get(claims, "name", "unavailable"),
-        issuer: Map.get(claims, "issuer", ""),
-        contract_id: contract_id,
-        tags: Map.get(claims, "tags", []),
-        link_name: link_name,
-        instances: []
-      })
-
-    instance = %Instance{
-      id: instance_id,
-      host_id: source_host,
-      spec_id: spec,
-      version: Map.get(claims, "version", ""),
-      revision: Map.get(claims, "revision", 0)
-    }
-
-    provider =
-      if provider.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
-        %{provider | instances: [instance | provider.instances]}
-      else
-        provider
-      end
-
-    %Lattice{
-      l
-      | providers: Map.put(l.providers, {pk, link_name}, provider),
-        instance_tracking:
-          Map.put(l.instance_tracking, instance.id, timestamp_from_iso8601(stamp))
-    }
-  end
-
-  defp remove_provider_instance(l, _source_host, pk, link_name, instance_id, _spec) do
-    provider = l.providers[{pk, link_name}]
-
-    if provider != nil do
-      provider = %Provider{
-        provider
-        | instances: provider.instances |> Enum.reject(fn i -> i.id == instance_id end)
-      }
-
-      %Lattice{
-        l
-        | providers: Map.put(l.providers, {pk, link_name}, provider),
-          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
-      }
-      |> strip_instanceless_entities()
-    else
-      l
-    end
-  end
-
-  defp remove_host(l = %Lattice{}, source_host) do
-    # NOTE: the instance_tracking map will purge unseen instances
-    # during the decay event processing.
-
-    l = %Lattice{
-      l
-      | hosts: Map.delete(l.hosts, source_host),
-        actors:
-          l.actors
-          |> Enum.map(fn {k, v} ->
-            {k,
-             %Actor{
-               v
-               | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
-             }}
-          end)
-          |> Enum.into(%{}),
-        providers:
-          l.providers
-          |> Enum.map(fn {k, v} ->
-            {k,
-             %Provider{
-               v
-               | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
-             }}
-          end)
-          |> Enum.into(%{})
-    }
-
-    l |> strip_instanceless_entities()
-  end
-
-  defp strip_instanceless_entities(l = %Lattice{}) do
-    %Lattice{
-      l
-      | actors: l.actors |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{}),
-        providers:
-          l.providers |> Enum.reject(fn {_k, v} -> v.instances == [] end) |> Enum.into(%{})
-    }
-  end
-
-  defp record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
-    labels = Map.get(data, "labels", %{})
-    l = record_host(l, source_host, labels, stamp)
-
-    l =
-      List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
-        # TODO - once the host can emit annotations we can pull the spec
-        put_actor_instance(acc, source_host, x["public_key"], x["instance_id"], "", stamp, %{})
-      end)
-
-    l =
-      List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
-        # TODO - once the host emits annotations we can pull the spec
-        put_provider_instance(
-          acc,
-          source_host,
-          x["public_key"],
-          x["link_name"],
-          x["contract_id"],
-          x["instance_id"],
-          "",
-          stamp,
-          %{}
-        )
-      end)
-
-    l
-  end
-
-  defp record_host(l = %Lattice{}, source_host, labels, stamp) do
-    host =
-      Map.get(l.hosts, source_host, %Host{
-        id: source_host,
-        labels: labels,
-        first_seen: timestamp_from_iso8601(stamp)
-      })
-
-    # Every time we see a host, we set the last seen stamp
-    # and bump it to healthy (TODO: support aggregate status based on
-    # host contents)
-    host =
-      Map.merge(
-        host,
-        %{
-          last_seen: timestamp_from_iso8601(stamp),
-          status: :healthy
-        }
-      )
-
-    %Lattice{l | hosts: Map.put(l.hosts, source_host, host)}
-  end
-
-  @spec timestamp_from_iso8601(binary) :: DateTime.t()
-  def timestamp_from_iso8601(stamp) when is_binary(stamp) do
-    case DateTime.from_iso8601(stamp) do
-      {:ok, datetime, 0} -> datetime
-      _ -> DateTime.utc_now()
-    end
   end
 
   @spec running_instances(
@@ -664,6 +485,25 @@ defmodule LatticeObserver.Observed.Lattice do
       nil -> :error
       pk -> {:ok, pk}
     end
+  end
+
+  @spec lookup_invocation_log(
+          Lattice.t(),
+          Invocation.Entity.t(),
+          Invocation.Entity.t(),
+          String.t()
+        ) ::
+          :error | {:ok, Invocation.Log.t()}
+  def lookup_invocation_log(%Lattice{invocation_log: log}, from, to, operation) do
+    case Map.get(log, {from, to, operation}) do
+      nil -> :error
+      il -> {:ok, il}
+    end
+  end
+
+  @spec get_all_invocation_logs(Lattice.t()) :: [Invocation.InvocationLog.t()]
+  def get_all_invocation_logs(%Lattice{} = l) do
+    Map.values(l.invocation_log)
   end
 
   defp in_spec?(%Instance{spec_id: spec_id}, appspec) do

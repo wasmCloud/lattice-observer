@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.HostsTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.Lattice
+  alias LatticeObserver.Observed.{Lattice, EventProcessor}
   alias TestSupport.CloudEvents
 
   @test_host "Nxxx"
@@ -57,7 +57,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
           %{test: "yes"}
         )
 
-      stamp = Lattice.timestamp_from_iso8601(started.time)
+      stamp = EventProcessor.timestamp_from_iso8601(started.time)
 
       l = Lattice.apply_event(Lattice.new(), started)
       assert l.hosts[@test_host].status == :healthy
@@ -72,7 +72,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
 
     test "Properly records host heartbeat" do
       hb = CloudEvents.host_heartbeat(@test_host, %{foo: "bar", baz: "biz"})
-      stamp = Lattice.timestamp_from_iso8601(hb.time)
+      stamp = EventProcessor.timestamp_from_iso8601(hb.time)
       l = Lattice.apply_event(Lattice.new(), hb)
 
       assert l.hosts[@test_host].labels == %{baz: "biz", foo: "bar"}
@@ -80,7 +80,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       assert l.hosts[@test_host].last_seen == stamp
 
       hb2 = CloudEvents.host_heartbeat(@test_host, %{foo: "bar", baz: "biz"})
-      stamp2 = Lattice.timestamp_from_iso8601(hb2.time)
+      stamp2 = EventProcessor.timestamp_from_iso8601(hb2.time)
       l = Lattice.apply_event(l, hb2)
 
       assert l.hosts[@test_host].labels == %{baz: "biz", foo: "bar"}

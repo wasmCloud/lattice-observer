@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.ProvidersTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.{Lattice, Instance, Provider}
+  alias LatticeObserver.Observed.{Lattice, Instance, Provider, EventProcessor}
   alias TestSupport.CloudEvents
 
   @test_spec "testapp"
@@ -22,7 +22,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
 
       l = Lattice.new()
       l = Lattice.apply_event(l, start)
-      stamp1 = Lattice.timestamp_from_iso8601(start.time)
+      stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
       # ensure idempotence
       l = Lattice.apply_event(l, start)
 
@@ -101,7 +101,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           @test_host
         )
 
-      stamp = Lattice.timestamp_from_iso8601(start.time)
+      stamp = EventProcessor.timestamp_from_iso8601(start.time)
       l = Lattice.apply_event(Lattice.new(), start)
 
       start2 =
@@ -114,7 +114,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           @test_host
         )
 
-      stamp2 = Lattice.timestamp_from_iso8601(start2.time)
+      stamp2 = EventProcessor.timestamp_from_iso8601(start2.time)
       l = Lattice.apply_event(l, start2)
 
       assert l == %Lattice{
@@ -159,7 +159,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           @test_host
         )
 
-      stamp3 = Lattice.timestamp_from_iso8601(start3.time)
+      stamp3 = EventProcessor.timestamp_from_iso8601(start3.time)
 
       l = Lattice.apply_event(l, start3)
 
