@@ -131,4 +131,24 @@ defmodule TestSupport.CloudEvents do
     }
     |> LatticeObserver.CloudEvent.new("linkdef_deleted", host)
   end
+
+  def invocation_succeeded(from = %{}, to = %{}, bytes, operation, host) do
+    %{
+      "source" => from,
+      "dest" => to,
+      "operation" => operation,
+      "bytes" => bytes
+    }
+    |> LatticeObserver.CloudEvent.new("invocation_succeeded", host)
+  end
+
+  def invocation_failed(from = %{}, to = %{}, bytes, operation, host) do
+    %{
+      "source" => from,
+      "dest" => to,
+      "operation" => operation,
+      "bytes" => bytes
+    }
+    |> LatticeObserver.CloudEvent.new("invocation_failed", host)
+  end
 end

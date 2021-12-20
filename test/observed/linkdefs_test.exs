@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.LinkdefsTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.{Lattice, EventProcessor}
+  alias LatticeObserver.Observed.Lattice
   alias TestSupport.CloudEvents
 
   describe "Observed Lattice Monitors Linkdef Events" do

@@ -1,5 +1,5 @@
 defmodule LatticeObserver.Observed.EventProcessor do
-  alias LatticeObserver.Observed.{Lattice, Provider, Host, Actor, Instance, LinkDefinition, Decay}
+  alias LatticeObserver.Observed.{Lattice, Provider, Host, Actor, Instance, LinkDefinition}
 
   def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp, claims)
       when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do

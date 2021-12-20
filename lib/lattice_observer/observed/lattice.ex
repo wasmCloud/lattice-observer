@@ -15,14 +15,24 @@ defmodule LatticeObserver.Observed.Lattice do
     Instance,
     LinkDefinition,
     Decay,
-    EventProcessor
+    EventProcessor,
+    Invocation
   }
 
   require Logger
 
   # We need the keys to be there, even if they hold empty lists
   @enforce_keys [:actors, :providers, :hosts, :linkdefs]
-  defstruct [:actors, :providers, :hosts, :linkdefs, :refmap, :instance_tracking, :parameters]
+  defstruct [
+    :actors,
+    :providers,
+    :hosts,
+    :linkdefs,
+    :refmap,
+    :instance_tracking,
+    :parameters,
+    :invocation_log
+  ]
 
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
@@ -60,6 +70,7 @@ defmodule LatticeObserver.Observed.Lattice do
           linkdefs: [LinkDefinition.t()],
           instance_tracking: instance_trackmap(),
           refmap: refmap(),
+          invocation_log: Invocation.invocationlog_map(),
           parameters: [Parameters.t()]
         }
 
@@ -72,6 +83,7 @@ defmodule LatticeObserver.Observed.Lattice do
       linkdefs: [],
       instance_tracking: %{},
       refmap: %{},
+      invocation_log: %{},
       parameters: %Parameters{
         host_status_decay_rate_seconds:
           Keyword.get(parameters, :host_status_decay_rate_seconds, 35)
@@ -114,6 +126,60 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     labels = Map.get(data, "labels", %{})
     EventProcessor.record_host(l, source_host, labels, stamp)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.invocation_succeeded",
+          data: %{
+            "source" =>
+              %{
+                "public_key" => _pk,
+                "contract_id" => _cid,
+                "link_name" => _ln
+              } = source,
+            "dest" =>
+              %{
+                "public_key" => _pk2,
+                "contract_id" => _cid2,
+                "link_name" => _ln2
+              } = dest,
+            "operation" => operation,
+            "bytes" => bytes
+          }
+        }
+      ) do
+    Invocation.record_invocation_success(l, source, dest, operation, bytes)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.invocation_failed",
+          data: %{
+            "source" =>
+              %{
+                "public_key" => _pk,
+                "contract_id" => _cid,
+                "link_name" => _ln
+              } = source,
+            "dest" =>
+              %{
+                "public_key" => _pk2,
+                "contract_id" => _cid2,
+                "link_name" => _ln2
+              } = dest,
+            "operation" => operation,
+            "bytes" => bytes
+          }
+        }
+      ) do
+    Invocation.record_invocation_failed(l, source, dest, operation, bytes)
   end
 
   def apply_event(
@@ -419,6 +485,25 @@ defmodule LatticeObserver.Observed.Lattice do
       nil -> :error
       pk -> {:ok, pk}
     end
+  end
+
+  @spec lookup_invocation_log(
+          Lattice.t(),
+          Invocation.Entity.t(),
+          Invocation.Entity.t(),
+          String.t()
+        ) ::
+          :error | {:ok, Invocation.Log.t()}
+  def lookup_invocation_log(%Lattice{invocation_log: log}, from, to, operation) do
+    case Map.get(log, {from, to, operation}) do
+      nil -> :error
+      il -> {:ok, il}
+    end
+  end
+
+  @spec get_all_invocation_logs(Lattice.t()) :: [Invocation.InvocationLog.t()]
+  def get_all_invocation_logs(%Lattice{} = l) do
+    Map.values(l.invocation_log)
   end
 
   defp in_spec?(%Instance{spec_id: spec_id}, appspec) do
