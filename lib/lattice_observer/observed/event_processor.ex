@@ -145,7 +145,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
   def record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
     labels = Map.get(data, "labels", %{})
-    l = record_host(l, source_host, labels, stamp)
+    friendly_name = Map.get(data, "friendly_name", "")
+    l = record_host(l, source_host, labels, stamp, friendly_name)
 
     l =
       List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
@@ -172,12 +173,13 @@ defmodule LatticeObserver.Observed.EventProcessor do
     l
   end
 
-  def record_host(l = %Lattice{}, source_host, labels, stamp) do
+  def record_host(l = %Lattice{}, source_host, labels, stamp, friendly_name \\ "") do
     host =
       Map.get(l.hosts, source_host, %Host{
         id: source_host,
         labels: labels,
-        first_seen: timestamp_from_iso8601(stamp)
+        first_seen: timestamp_from_iso8601(stamp),
+        friendly_name: friendly_name
       })
 
     # Every time we see a host, we set the last seen stamp

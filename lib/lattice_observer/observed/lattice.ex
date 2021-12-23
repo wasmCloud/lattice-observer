@@ -125,7 +125,8 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     labels = Map.get(data, "labels", %{})
-    EventProcessor.record_host(l, source_host, labels, stamp)
+    friendly_name = Map.get(data, "friendly_name", "")
+    EventProcessor.record_host(l, source_host, labels, stamp, friendly_name)
   end
 
   def apply_event(

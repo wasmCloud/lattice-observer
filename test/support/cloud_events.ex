@@ -47,9 +47,10 @@ defmodule TestSupport.CloudEvents do
     |> LatticeObserver.CloudEvent.new("actor_stopped", host)
   end
 
-  def host_started(host, labels) do
+  def host_started(host, labels, friendly_name \\ "default-runner-1") do
     %{
-      "labels" => labels
+      "labels" => labels,
+      "friendly_name" => friendly_name
     }
     |> LatticeObserver.CloudEvent.new("host_started", host)
   end

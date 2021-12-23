@@ -11,13 +11,15 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       started =
         CloudEvents.host_started(
           @test_host,
-          %{test: "yes"}
+          %{test: "yes"},
+          "orange-pelican-5"
         )
 
       started2 =
         CloudEvents.host_started(
           @test_host2,
-          %{test: "maybe"}
+          %{test: "maybe"},
+          "yellow-cat-6"
         )
 
       actor1 = CloudEvents.actor_started("Mxxx", "abc123", "none", @test_host)
@@ -45,6 +47,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
         |> Lattice.apply_event(host1_stop)
 
       assert Map.keys(l.hosts) == ["Nxxxy"]
+      assert (l.hosts |> Map.values() |> List.first()).friendly_name == "yellow-cat-6"
       assert Map.keys(l.instance_tracking) == ["abc123", "abc456", "abc789"]
       assert l.providers == %{}
       assert l.actors == %{}
@@ -54,7 +57,8 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       started =
         CloudEvents.host_started(
           @test_host,
-          %{test: "yes"}
+          %{test: "yes"},
+          "active-racoon-1"
         )
 
       stamp = EventProcessor.timestamp_from_iso8601(started.time)
