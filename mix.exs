@@ -25,7 +25,6 @@ defmodule LatticeObserver.MixProject do
     [
       {:cloudevents, "~> 0.4.0"},
       {:uuid, "~> 1.1"},
-      {:gnat, "~> 1.3"},
       {:jason, "~> 1.2"}
     ]
   end
