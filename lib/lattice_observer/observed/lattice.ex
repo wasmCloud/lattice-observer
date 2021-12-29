@@ -22,8 +22,9 @@ defmodule LatticeObserver.Observed.Lattice do
   require Logger
 
   # We need the keys to be there, even if they hold empty lists
-  @enforce_keys [:actors, :providers, :hosts, :linkdefs]
+  @enforce_keys [:id, :actors, :providers, :hosts, :linkdefs]
   defstruct [
+    :id,
     :actors,
     :providers,
     :hosts,
@@ -64,6 +65,7 @@ defmodule LatticeObserver.Observed.Lattice do
   of the actors, providers, link definitions, and hosts within it.
   """
   @type t :: %Lattice{
+          id: String.t(),
           actors: actormap(),
           providers: providermap(),
           hosts: hostmap(),
@@ -74,9 +76,10 @@ defmodule LatticeObserver.Observed.Lattice do
           parameters: [Parameters.t()]
         }
 
-  @spec new(Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
-  def new(parameters \\ []) do
+  @spec new(String.t(), Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
+  def new(id \\ "default", parameters \\ []) do
     %Lattice{
+      id: id,
       actors: %{},
       providers: %{},
       hosts: %{},
