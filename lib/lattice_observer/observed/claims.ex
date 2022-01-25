@@ -3,7 +3,7 @@ defmodule LatticeObserver.Observed.Claims do
   alias __MODULE__
   alias LatticeObserver.Observed.{Lattice, Provider, Actor}
 
-  @enforce_keys [:sub]
+  @enforce_keys [:sub, :iss]
   defstruct [
     :sub,
     :call_alias,
@@ -44,8 +44,6 @@ defmodule LatticeObserver.Observed.Claims do
     provs =
       l.providers
       |> Enum.map(fn {key = {pk, _ln}, prov} ->
-        # IO.inspect(key)
-        # IO.inspect(prov)
         if public_key == pk do
           {key, %Provider{prov | name: name, issuer: issuer, tags: tags |> String.split(",")}}
         else
@@ -55,16 +53,6 @@ defmodule LatticeObserver.Observed.Claims do
       |> Enum.into(%{})
 
     %Lattice{l | providers: provs}
-    # l =
-    #   case l.providers |> Map.get({public_key, link_name}) do
-    #     nil ->
-    #       # Please disperse, nothing to see here.
-    #       l
-
-    #     p ->
-    #       p = %Provider{p | name: name, tags: tags |> String.split(","), issuer: issuer}
-    #       %Lattice{l | providers: l.providers |> Map.put({public_key, link_name}, p)}
-    #   end
   end
 
   # Apply an actor's claims
