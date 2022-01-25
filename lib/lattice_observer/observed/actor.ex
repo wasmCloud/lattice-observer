@@ -3,7 +3,7 @@ defmodule LatticeObserver.Observed.Actor do
   alias LatticeObserver.Observed.Instance
 
   @enforce_keys [:id, :name]
-  defstruct [:id, :name, :capabilities, :issuer, :tags, :call_alias, :version, :instances]
+  defstruct [:id, :name, :capabilities, :issuer, :tags, :call_alias, :instances]
 
   @typedoc """
   An actor observed through event receipt within the lattice.
@@ -17,4 +17,16 @@ defmodule LatticeObserver.Observed.Actor do
           call_alias: String.t(),
           instances: [Instance.t()]
         }
+
+  def new(id, name) when is_binary(id) and is_binary(name) do
+    %Actor{
+      id: id,
+      name: name,
+      instances: [],
+      capabilities: [],
+      issuer: "",
+      call_alias: "",
+      tags: ""
+    }
+  end
 end

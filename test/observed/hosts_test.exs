@@ -133,8 +133,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  ],
                  issuer: "",
                  name: "unavailable",
-                 tags: [],
-                 version: nil
+                 tags: []
                },
                "Mxxxy" => %LatticeObserver.Observed.Actor{
                  call_alias: "",
@@ -151,8 +150,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  ],
                  issuer: "",
                  name: "unavailable",
-                 tags: [],
-                 version: nil
+                 tags: []
                }
              }
 
@@ -172,8 +170,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  issuer: "",
                  link_name: "default",
                  name: "unavailable",
-                 tags: [],
-                 version: nil
+                 tags: []
                }
              }
     end
