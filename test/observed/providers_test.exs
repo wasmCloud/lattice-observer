@@ -47,8 +47,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
               issuer: "ATESTxxx",
               link_name: "default",
               name: "test provider",
-              tags: ["a", "b"],
-              version: nil
+              tags: ["a", "b"]
             }
           }
       }

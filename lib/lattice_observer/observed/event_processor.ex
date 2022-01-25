@@ -1,25 +1,55 @@
 defmodule LatticeObserver.Observed.EventProcessor do
   alias LatticeObserver.Observed.{Lattice, Provider, Host, Actor, Instance, LinkDefinition}
 
+  defp get_claim(_l = %Lattice{claims: claims}, field, pk, default \\ "") do
+    one_claim = Map.get(claims, pk, %{})
+    Map.get(one_claim, field, default)
+  end
+
+  defp safesplit(str) when is_binary(str) do
+    str |> String.split() |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
+  end
+
+  defp safesplit("") do
+    []
+  end
+
+  defp merge_provider(provider, l, claims) do
+    %Provider{
+      provider
+      | name: Map.get(claims, "name", get_claim(l, :name, provider.id, "unavailable")),
+        issuer: Map.get(claims, "issuer", get_claim(l, :iss, provider.id)),
+        tags:
+          Map.get(
+            claims,
+            "tags",
+            Map.get(claims, "tags", get_claim(l, :tags, provider.id) |> safesplit())
+          )
+    }
+  end
+
+  defp merge_actor(actor, l, claims) do
+    %Actor{
+      actor
+      | name: Map.get(claims, "name", get_claim(l, :name, actor.id, "unavailable")),
+        capabilities: Map.get(claims, "caps", get_claim(l, :caps, actor.id) |> safesplit()),
+        issuer: Map.get(claims, "issuer", get_claim(l, :iss, actor.id)),
+        tags: Map.get(claims, "tags", get_claim(l, :tags, actor.id) |> safesplit()),
+        call_alias: Map.get(claims, "call_alias", get_claim(l, :call_alias, actor.id))
+    }
+  end
+
   def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp, claims)
       when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do
-    actor =
-      Map.get(l.actors, pk, %Actor{
-        id: pk,
-        name: Map.get(claims, "name", "unavailable"),
-        capabilities: Map.get(claims, "caps", []),
-        issuer: Map.get(claims, "issuer", ""),
-        tags: Map.get(claims, "tags", []),
-        call_alias: Map.get(claims, "call_alias", ""),
-        instances: []
-      })
+    actor = Map.get(l.actors, pk, Actor.new(pk, "unavailable"))
+    actor = merge_actor(actor, l, claims)
 
     instance = %Instance{
       id: instance_id,
       host_id: host_id,
       spec_id: spec,
-      version: Map.get(claims, "version", ""),
-      revision: Map.get(claims, "revision", 0)
+      version: Map.get(claims, "version", get_claim(l, :version, pk)),
+      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> String.to_integer())
     }
 
     actor =
@@ -48,28 +78,21 @@ defmodule LatticeObserver.Observed.EventProcessor do
         stamp,
         claims
       ) do
-    provider =
-      Map.get(l.providers, {pk, link_name}, %Provider{
-        id: pk,
-        name: Map.get(claims, "name", "unavailable"),
-        issuer: Map.get(claims, "issuer", ""),
-        contract_id: contract_id,
-        tags: Map.get(claims, "tags", []),
-        link_name: link_name,
-        instances: []
-      })
+    provider = Map.get(l.providers, {pk, link_name}, Provider.new(pk, link_name, contract_id, []))
+    provider = merge_provider(provider, l, claims)
 
     instance = %Instance{
       id: instance_id,
       host_id: source_host,
       spec_id: spec,
-      version: Map.get(claims, "version", ""),
-      revision: Map.get(claims, "revision", 0)
+      version: Map.get(claims, "version", get_claim(l, :version, pk)),
+      # NOTE - wasmCloud Host does not yet emit provider rev
+      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> String.to_integer())
     }
 
     provider =
       if provider.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
-        %{provider | instances: [instance | provider.instances]}
+        %Provider{provider | instances: [instance | provider.instances]}
       else
         provider
       end

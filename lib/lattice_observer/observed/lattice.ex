@@ -16,7 +16,8 @@ defmodule LatticeObserver.Observed.Lattice do
     LinkDefinition,
     Decay,
     EventProcessor,
-    Invocation
+    Invocation,
+    Claims
   }
 
   require Logger
@@ -32,7 +33,8 @@ defmodule LatticeObserver.Observed.Lattice do
     :refmap,
     :instance_tracking,
     :parameters,
-    :invocation_log
+    :invocation_log,
+    :claims
   ]
 
   @typedoc """
@@ -45,6 +47,7 @@ defmodule LatticeObserver.Observed.Lattice do
   @type hostmap :: %{required(String.t()) => Host.t()}
   # map between OCI image URL/imageref and public key
   @type refmap :: %{required(String.t()) => String.t()}
+  @type claimsmap :: %{required(String.t()) => Claims.t()}
 
   @type entitystatus :: :healthy | :warn | :fail | :unavailable | :remove
 
@@ -73,7 +76,8 @@ defmodule LatticeObserver.Observed.Lattice do
           instance_tracking: instance_trackmap(),
           refmap: refmap(),
           invocation_log: Invocation.invocationlog_map(),
-          parameters: [Parameters.t()]
+          parameters: [Parameters.t()],
+          claims: claimsmap()
         }
 
   @spec new(String.t(), Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
@@ -90,8 +94,19 @@ defmodule LatticeObserver.Observed.Lattice do
       parameters: %Parameters{
         host_status_decay_rate_seconds:
           Keyword.get(parameters, :host_status_decay_rate_seconds, 35)
-      }
+      },
+      claims: %{}
     }
+  end
+
+  @doc """
+  Apply a set of claims discovered externally to the lattice observer. These
+  claims are used to augment partial information that comes in from events, such
+  as heartbeats that don't carry names, call aliases, etc
+  """
+  @spec apply_claims(t(), Claims.t()) :: t()
+  def apply_claims(l = %Lattice{}, claims = %Claims{}) do
+    Claims.apply(l, claims)
   end
 
   # Note to those unfamiliar with Elixir matching syntax. The following function

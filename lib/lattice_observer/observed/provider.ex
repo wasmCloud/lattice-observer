@@ -3,7 +3,7 @@ defmodule LatticeObserver.Observed.Provider do
   alias LatticeObserver.Observed.Instance
 
   @enforce_keys [:id, :contract_id, :link_name, :instances]
-  defstruct [:id, :name, :issuer, :version, :contract_id, :tags, :link_name, :instances]
+  defstruct [:id, :name, :issuer, :contract_id, :tags, :link_name, :instances]
 
   @typedoc """
   A representation of an observed capability provider. Providers are uniquely
