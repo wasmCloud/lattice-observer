@@ -6,6 +6,10 @@ defmodule LatticeObserver.Observed.EventProcessor do
     Map.get(one_claim, field, default)
   end
 
+  defp safesplit(str, delimiter) when is_binary(str) do
+    str |> String.split(delimiter) |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
+  end
+
   defp safesplit(str) when is_binary(str) do
     str |> String.split() |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
   end
@@ -32,7 +36,12 @@ defmodule LatticeObserver.Observed.EventProcessor do
     %Actor{
       actor
       | name: Map.get(claims, "name", get_claim(l, :name, actor.id, "unavailable")),
-        capabilities: Map.get(claims, "caps", get_claim(l, :caps, actor.id) |> safesplit()),
+        capabilities:
+          Map.get(
+            claims,
+            "caps",
+            get_claim(l, :caps, actor.id) |> safesplit(",")
+          ),
         issuer: Map.get(claims, "issuer", get_claim(l, :iss, actor.id)),
         tags: Map.get(claims, "tags", get_claim(l, :tags, actor.id) |> safesplit()),
         call_alias: Map.get(claims, "call_alias", get_claim(l, :call_alias, actor.id))
