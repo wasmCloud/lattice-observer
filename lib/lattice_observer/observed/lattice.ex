@@ -262,16 +262,15 @@ defmodule LatticeObserver.Observed.Lattice do
     spec = Map.get(annotations, @annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
 
-    apply_claims(l, %Claims{
-      iss: Map.get(claims, "issuer", "N/A"),
-      tags: Map.get(claims, "tags", ""),
-      name: Map.get(claims, "name", "unavailable"),
-      version: Map.get(claims, "version", ""),
-      call_alias: "",
-      caps: "",
-      rev: "",
-      sub: pk
-    })
+    l =
+      apply_claims(l, %Claims{
+        iss: Map.get(claims, "issuer", "N/A"),
+        tags: Map.get(claims, "tags", ""),
+        name: Map.get(claims, "name", "unavailable"),
+        version: Map.get(claims, "version", ""),
+        rev: Map.get(claims, "revision", "0"),
+        sub: pk
+      })
 
     EventProcessor.put_provider_instance(
       l,
@@ -353,16 +352,17 @@ defmodule LatticeObserver.Observed.Lattice do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
 
-    apply_claims(l, %Claims{
-      call_alias: Map.get(claims, "call_alias", ""),
-      iss: Map.get(claims, "issuer", "N/A"),
-      name: Map.get(claims, "name", ""),
-      caps: Map.get(claims, "caps", ""),
-      rev: Map.get(claims, "revision", ""),
-      tags: Map.get(claims, "tags", ""),
-      version: Map.get(claims, "version", ""),
-      sub: pk
-    })
+    l =
+      apply_claims(l, %Claims{
+        call_alias: Map.get(claims, "call_alias", ""),
+        iss: Map.get(claims, "issuer", "N/A"),
+        name: Map.get(claims, "name", ""),
+        caps: Map.get(claims, "caps", []) |> Enum.join(","),
+        rev: Map.get(claims, "revision", ""),
+        tags: Map.get(claims, "tags", ""),
+        version: Map.get(claims, "version", ""),
+        sub: pk
+      })
 
     EventProcessor.put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
   end

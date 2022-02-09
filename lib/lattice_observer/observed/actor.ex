@@ -2,7 +2,7 @@ defmodule LatticeObserver.Observed.Actor do
   alias __MODULE__
   alias LatticeObserver.Observed.Instance
 
-  @enforce_keys [:id, :name]
+  @enforce_keys [:id, :name, :instances]
   defstruct [:id, :name, :capabilities, :issuer, :tags, :call_alias, :instances]
 
   @typedoc """
@@ -22,11 +22,7 @@ defmodule LatticeObserver.Observed.Actor do
     %Actor{
       id: id,
       name: name,
-      instances: [],
-      capabilities: [],
-      issuer: "",
-      call_alias: "",
-      tags: ""
+      instances: []
     }
   end
 end
