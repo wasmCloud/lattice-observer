@@ -14,14 +14,20 @@ defmodule LatticeObserver.Observed.EventProcessor do
     str |> String.split() |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
   end
 
-  defp safesplit("") do
-    []
-  end
+  defp safesplit(""), do: []
+  defp safesplit([]), do: []
+  defp safesplit(nil), do: []
 
   defp merge_provider(provider, l, claims) do
+    name =
+      case Map.get(claims, "name", "unavailable") do
+        "unavailable" -> get_claim(l, :name, provider.id, "unavailable")
+        name -> name
+      end
+
     %Provider{
       provider
-      | name: Map.get(claims, "name", get_claim(l, :name, provider.id, "unavailable")),
+      | name: name,
         issuer: Map.get(claims, "issuer", get_claim(l, :iss, provider.id)),
         tags:
           Map.get(
@@ -33,9 +39,15 @@ defmodule LatticeObserver.Observed.EventProcessor do
   end
 
   defp merge_actor(actor, l, claims) do
+    name =
+      case Map.get(claims, "name", "unavailable") do
+        "unavailable" -> get_claim(l, :name, actor.id, "unavailable")
+        name -> name
+      end
+
     %Actor{
       actor
-      | name: Map.get(claims, "name", get_claim(l, :name, actor.id, "unavailable")),
+      | name: name,
         capabilities:
           Map.get(
             claims,
@@ -58,7 +70,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
       host_id: host_id,
       spec_id: spec,
       version: Map.get(claims, "version", get_claim(l, :version, pk)),
-      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> String.to_integer())
+      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, 0))
     }
 
     actor =
@@ -87,7 +99,9 @@ defmodule LatticeObserver.Observed.EventProcessor do
         stamp,
         claims
       ) do
-    provider = Map.get(l.providers, {pk, link_name}, Provider.new(pk, link_name, contract_id, []))
+    provider =
+      Map.get(l.providers, {pk, link_name}, Provider.new(pk, link_name, contract_id, [], []))
+
     provider = merge_provider(provider, l, claims)
 
     instance = %Instance{
@@ -183,7 +197,15 @@ defmodule LatticeObserver.Observed.EventProcessor do
     l =
       List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
         # TODO - once the host can emit annotations we can pull the spec
-        put_actor_instance(acc, source_host, x["public_key"], x["instance_id"], "", stamp, %{})
+        put_actor_instance(
+          acc,
+          source_host,
+          x["public_key"],
+          x["instance_id"],
+          "",
+          stamp,
+          %{}
+        )
       end)
 
     l =

@@ -20,12 +20,13 @@ defmodule LatticeObserver.Observed.Provider do
           instances: [Instance.t()]
         }
 
-  def new(id, link_name, contract_id, instances \\ []) do
+  def new(id, link_name, contract_id, instances \\ [], tags \\ []) do
     %Provider{
       id: id,
       link_name: link_name,
       contract_id: contract_id,
-      instances: instances
+      instances: instances,
+      tags: tags
     }
   end
 end

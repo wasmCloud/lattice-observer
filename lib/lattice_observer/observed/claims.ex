@@ -45,7 +45,7 @@ defmodule LatticeObserver.Observed.Claims do
       l.providers
       |> Enum.map(fn {key = {pk, _ln}, prov} ->
         if public_key == pk do
-          {key, %Provider{prov | name: name, issuer: issuer, tags: tags |> String.split(",")}}
+          {key, %Provider{prov | name: name, issuer: issuer, tags: tags |> safesplit()}}
         else
           {key, prov}
         end
@@ -95,4 +95,8 @@ defmodule LatticeObserver.Observed.Claims do
     Logger.warn("Unexpected claims data: #{inspect(claims)}")
     l
   end
+
+  defp safesplit(nil), do: []
+  defp safesplit([]), do: []
+  defp safesplit(str), do: String.split(str, ",")
 end
