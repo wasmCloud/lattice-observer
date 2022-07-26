@@ -453,6 +453,7 @@ defmodule LatticeObserver.Observed.Lattice do
     l
   end
 
+  # pk is an optional filter by public key
   @spec running_instances(
           LatticeObserver.Observed.Lattice.t(),
           nil | String.t(),
@@ -460,12 +461,34 @@ defmodule LatticeObserver.Observed.Lattice do
         ) :: [%{id: String.t(), instance_id: String.t(), host_id: String.t()}]
   def running_instances(%Lattice{} = l, pk, spec_id) when is_binary(pk) do
     if String.starts_with?(pk, "M") do
-      actors_in_appspec(l, spec_id)
+      actors = actors_in_appspec(l, spec_id)
+
+      actors =
+        if pk != nil do
+          actors
+          |> Enum.filter(fn %{actor_id: pub_key} -> pub_key == pk end)
+        else
+          actors
+        end
+
+      actors
       |> Enum.map(fn %{actor_id: pk, instance_id: iid, host_id: hid} ->
         %{id: pk, instance_id: iid, host_id: hid}
       end)
     else
-      providers_in_appspec(l, spec_id)
+      providers = providers_in_appspec(l, spec_id)
+
+      providers =
+        if pk != nil do
+          providers
+          |> Enum.filter(fn %{provider_id: pub_key} ->
+            pub_key == pk
+          end)
+        else
+          providers
+        end
+
+      providers
       |> Enum.map(fn %{provider_id: pk, instance_id: iid, host_id: hid} ->
         %{id: pk, instance_id: iid, host_id: hid}
       end)
