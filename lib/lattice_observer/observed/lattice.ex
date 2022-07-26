@@ -466,7 +466,7 @@ defmodule LatticeObserver.Observed.Lattice do
       actors =
         if pk != nil do
           actors
-          |> Enum.filter(fn %{actor_id: pub_key, instance_id: _, host_id: _} -> pub_key == pk end)
+          |> Enum.filter(fn %{actor_id: pub_key} -> pub_key == pk end)
         else
           actors
         end
@@ -481,7 +481,7 @@ defmodule LatticeObserver.Observed.Lattice do
       providers =
         if pk != nil do
           providers
-          |> Enum.filter(fn %{provider_id: pub_key, instance_id: _, host_id: _} ->
+          |> Enum.filter(fn %{provider_id: pub_key} ->
             pub_key == pk
           end)
         else
