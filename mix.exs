@@ -4,7 +4,7 @@ defmodule LatticeObserver.MixProject do
   def project do
     [
       app: :lattice_observer,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.12",
       elixirc_paths: compiler_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -23,7 +23,7 @@ defmodule LatticeObserver.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:cloudevents, "~> 0.4.0"},
+      {:cloudevents, "~> 0.6.1"},
       {:uuid, "~> 1.1"},
       {:jason, "~> 1.2"}
     ]
