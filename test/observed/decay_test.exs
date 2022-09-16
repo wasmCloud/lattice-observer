@@ -65,5 +65,92 @@ defmodule LatticeObserverTest.Observed.DecayTest do
       l = l |> Lattice.apply_event(tick)
       assert l.hosts == %{}
     end
+
+    test "Hosts that fully decay are removed along with their resources" do
+      start_time = DateTime.utc_now()
+
+      started =
+        CloudEvents.host_started(
+          @test_host,
+          %{test: "yes"}
+        )
+
+      started = %{started | time: start_time |> DateTime.to_iso8601()}
+
+      actor1 = CloudEvents.actor_started("Mxxx", "abc123", "none", @test_host)
+
+      l =
+        Lattice.new()
+        |> Lattice.apply_event(started)
+        |> Lattice.apply_event(actor1)
+
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 20, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts[@test_host].status == :healthy
+
+      assert l.actors == %{
+               "Mxxx" => %LatticeObserver.Observed.Actor{
+                 call_alias: "",
+                 capabilities: ["test", "test2"],
+                 id: "Mxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "abc123",
+                     revision: 0,
+                     spec_id: "none",
+                     version: "1.0"
+                   }
+                 ],
+                 issuer: "ATESTxxx",
+                 name: "Test Actor",
+                 tags: ""
+               }
+             }
+
+      # multiple decay ticks within the same time period do not double
+      # up and cause decay - e.g. decay tick processing is
+      # idempotent
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 20, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts[@test_host].status == :healthy
+
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 40, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts[@test_host].status == :warn
+
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 80, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts[@test_host].status == :fail
+
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 120, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts[@test_host].status == :unavailable
+
+      assert l.actors == %{
+               "Mxxx" => %LatticeObserver.Observed.Actor{
+                 call_alias: "",
+                 capabilities: ["test", "test2"],
+                 id: "Mxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "abc123",
+                     revision: 0,
+                     spec_id: "none",
+                     version: "1.0"
+                   }
+                 ],
+                 issuer: "ATESTxxx",
+                 name: "Test Actor",
+                 tags: ""
+               }
+             }
+
+      tick = CloudEvents.decay_tick(DateTime.add(start_time, 160, :second))
+      l = l |> Lattice.apply_event(tick)
+      assert l.hosts == %{}
+      assert l.actors == %{}
+    end
   end
 end
