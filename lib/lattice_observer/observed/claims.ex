@@ -45,7 +45,7 @@ defmodule LatticeObserver.Observed.Claims do
       l.providers
       |> Enum.map(fn {key = {pk, _ln}, prov} ->
         if public_key == pk do
-          {key, %Provider{prov | name: name, issuer: issuer, tags: tags |> safesplit()}}
+          {key, %Provider{prov | name: name, issuer: issuer, tags: tags |> safesplit_tags()}}
         else
           {key, prov}
         end
@@ -96,7 +96,8 @@ defmodule LatticeObserver.Observed.Claims do
     l
   end
 
-  defp safesplit(nil), do: []
-  defp safesplit([]), do: []
-  defp safesplit(str), do: String.split(str, ",")
+  defp safesplit_tags(nil), do: ""
+  defp safesplit_tags(list) when is_list(list), do: list |> Enum.join(",")
+  defp safesplit_tags(str) when is_binary(str), do: str
+  defp safesplit_tags(_), do: ""
 end

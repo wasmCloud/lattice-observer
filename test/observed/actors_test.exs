@@ -34,7 +34,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                      ],
                      issuer: "ATESTxxx",
                      name: "Test Actor",
-                     tags: []
+                     tags: ""
+                   }
+                 },
+                 claims: %{
+                   "Mxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: "",
+                     caps: "test,test2",
+                     iss: "ATESTxxx",
+                     name: "Test Actor",
+                     rev: 0,
+                     sub: "Mxxx",
+                     tags: "",
+                     version: "1.0"
                    }
                  },
                  instance_tracking: %{
@@ -49,7 +61,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
 
       assert l == %Lattice{
                Lattice.new()
-               | actors: %{}
+               | actors: %{},
+                 claims: %{
+                   "Mxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: "",
+                     caps: "test,test2",
+                     iss: "ATESTxxx",
+                     name: "Test Actor",
+                     rev: 0,
+                     sub: "Mxxx",
+                     tags: "",
+                     version: "1.0"
+                   }
+                 }
              }
     end
 
@@ -87,7 +111,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                      ],
                      issuer: "ATESTxxx",
                      name: "Test Actor",
-                     tags: []
+                     tags: ""
+                   }
+                 },
+                 claims: %{
+                   "Mxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: "",
+                     caps: "test,test2",
+                     iss: "ATESTxxx",
+                     name: "Test Actor",
+                     rev: 0,
+                     sub: "Mxxx",
+                     tags: "",
+                     version: "1.0"
                    }
                  },
                  instance_tracking: %{
@@ -121,7 +157,19 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                      ],
                      issuer: "ATESTxxx",
                      name: "Test Actor",
-                     tags: []
+                     tags: ""
+                   }
+                 },
+                 claims: %{
+                   "Mxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: "",
+                     caps: "test,test2",
+                     iss: "ATESTxxx",
+                     name: "Test Actor",
+                     rev: 0,
+                     sub: "Mxxx",
+                     tags: "",
+                     version: "1.0"
                    }
                  },
                  instance_tracking: %{

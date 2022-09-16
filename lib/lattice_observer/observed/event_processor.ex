@@ -6,17 +6,18 @@ defmodule LatticeObserver.Observed.EventProcessor do
     Map.get(one_claim, field, default)
   end
 
-  defp safesplit(str, delimiter) when is_binary(str) do
-    str |> String.split(delimiter) |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
+  defp safesplit_caps(""), do: []
+  defp safesplit_caps(nil), do: []
+  defp safesplit_caps(list) when is_list(list), do: list
+
+  defp safesplit_caps(str) when is_binary(str) do
+    str |> String.split(",") |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
   end
 
-  defp safesplit(str) when is_binary(str) do
-    str |> String.split() |> Enum.map(fn s -> String.trim(s) end) |> Enum.into([])
-  end
-
-  defp safesplit(""), do: []
-  defp safesplit([]), do: []
-  defp safesplit(nil), do: []
+  defp safesplit_tags(nil), do: ""
+  defp safesplit_tags(list) when is_list(list), do: list |> Enum.join(",")
+  defp safesplit_tags(str) when is_binary(str), do: str
+  defp safesplit_tags(_), do: ""
 
   defp merge_provider(provider, l, claims) do
     name =
@@ -33,7 +34,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
           Map.get(
             claims,
             "tags",
-            Map.get(claims, "tags", get_claim(l, :tags, provider.id) |> safesplit())
+            Map.get(claims, "tags", get_claim(l, :tags, provider.id) |> safesplit_tags())
           )
     }
   end
@@ -52,10 +53,10 @@ defmodule LatticeObserver.Observed.EventProcessor do
           Map.get(
             claims,
             "caps",
-            get_claim(l, :caps, actor.id) |> safesplit(",")
+            get_claim(l, :caps, actor.id) |> safesplit_caps()
           ),
         issuer: Map.get(claims, "issuer", get_claim(l, :iss, actor.id)),
-        tags: Map.get(claims, "tags", get_claim(l, :tags, actor.id) |> safesplit()),
+        tags: Map.get(claims, "tags", get_claim(l, :tags, actor.id) |> safesplit_tags()),
         call_alias: Map.get(claims, "call_alias", get_claim(l, :call_alias, actor.id))
     }
   end
@@ -110,7 +111,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
       spec_id: spec,
       version: Map.get(claims, "version", get_claim(l, :version, pk)),
       # NOTE - wasmCloud Host does not yet emit provider rev
-      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> String.to_integer())
+      revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> parse_revision())
     }
 
     provider =
@@ -310,4 +311,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
       _ -> DateTime.utc_now()
     end
   end
+
+  defp parse_revision(rev) when is_number(rev), do: rev
+  defp parse_revision(rev) when is_binary(rev), do: rev |> String.to_integer()
+  defp parse_revision(_), do: 0
 end

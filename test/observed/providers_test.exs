@@ -31,6 +31,18 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
         | instance_tracking: %{
             "abc123" => stamp1
           },
+          claims: %{
+            "Vxxx" => %LatticeObserver.Observed.Claims{
+              call_alias: nil,
+              caps: nil,
+              iss: "ATESTxxx",
+              name: "test provider",
+              rev: 2,
+              sub: "Vxxx",
+              tags: "a,b",
+              version: "1.0"
+            }
+          },
           providers: %{
             {"Vxxx", "default"} => %Provider{
               contract_id: "wasmcloud:test",
@@ -47,7 +59,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
               issuer: "ATESTxxx",
               link_name: "default",
               name: "test provider",
-              tags: ["a", "b"]
+              tags: "a,b"
             }
           }
       }
@@ -79,7 +91,19 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
 
       desired = %Lattice{
         Lattice.new()
-        | providers: %{}
+        | providers: %{},
+          claims: %{
+            "Vxxx" => %LatticeObserver.Observed.Claims{
+              call_alias: nil,
+              caps: nil,
+              iss: "ATESTxxx",
+              name: "test provider",
+              rev: 2,
+              sub: "Vxxx",
+              tags: "a,b",
+              version: "1.0"
+            }
+          }
       }
 
       assert l == desired
@@ -142,7 +166,19 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                      issuer: "ATESTxxx",
                      link_name: "default",
                      name: "test provider",
-                     tags: ["a", "b"]
+                     tags: "a,b"
+                   }
+                 },
+                 claims: %{
+                   "Vxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: nil,
+                     caps: nil,
+                     iss: "ATESTxxx",
+                     name: "test provider",
+                     rev: 2,
+                     sub: "Vxxx",
+                     tags: "a,b",
+                     version: "1.0"
                    }
                  }
              }
@@ -174,7 +210,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                      contract_id: "wasmcloud:test",
                      issuer: "ATESTxxx",
                      name: "test provider",
-                     tags: ["a", "b"],
+                     tags: "a,b",
                      id: "Vxxx",
                      instances: [
                        %Instance{
@@ -200,6 +236,18 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                        }
                      ],
                      link_name: "default"
+                   }
+                 },
+                 claims: %{
+                   "Vxxx" => %LatticeObserver.Observed.Claims{
+                     call_alias: nil,
+                     caps: nil,
+                     iss: "ATESTxxx",
+                     name: "test provider",
+                     rev: 2,
+                     sub: "Vxxx",
+                     tags: "a,b",
+                     version: "1.0"
                    }
                  }
              }

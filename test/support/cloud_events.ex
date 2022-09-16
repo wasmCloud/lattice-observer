@@ -35,7 +35,7 @@ defmodule TestSupport.CloudEvents do
         "caps" => ["test", "test2"],
         "version" => "1.0",
         "revision" => 0,
-        "tags" => [],
+        "tags" => "",
         "issuer" => "ATESTxxx"
       }
     }
@@ -86,7 +86,7 @@ defmodule TestSupport.CloudEvents do
         "version" => "1.0",
         "revision" => 2,
         "issuer" => "ATESTxxx",
-        "tags" => ["a", "b"]
+        "tags" => "a,b"
       }
     }
     |> LatticeObserver.CloudEvent.new("provider_started", host)
