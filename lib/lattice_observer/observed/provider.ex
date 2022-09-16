@@ -15,7 +15,7 @@ defmodule LatticeObserver.Observed.Provider do
           name: String.t(),
           issuer: String.t(),
           contract_id: String.t(),
-          tags: [String.t()],
+          tags: String.t(),
           link_name: String.t(),
           instances: [Instance.t()]
         }

@@ -53,6 +53,47 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       assert l.actors == %{}
     end
 
+    test "Launching a previously killed host clears out lattice cache artifacts" do
+      started =
+        CloudEvents.host_started(
+          @test_host,
+          %{test: "yes"},
+          "orange-button-5"
+        )
+
+      actor1 = CloudEvents.actor_started("Mxxx", "abc123", "none", @test_host)
+      actor2 = CloudEvents.actor_started("Mxxx", "abc456", "none", @test_host)
+
+      provider =
+        CloudEvents.provider_started(
+          "Vxxx",
+          "wasmcloud:test",
+          "default",
+          "abc789",
+          "none",
+          @test_host
+        )
+
+      l =
+        Lattice.new()
+        |> Lattice.apply_event(started)
+        |> Lattice.apply_event(actor1)
+        |> Lattice.apply_event(actor2)
+        |> Lattice.apply_event(provider)
+
+      assert Map.keys(l.hosts) == ["Nxxx"]
+      assert (l.hosts |> Map.values() |> List.first()).friendly_name == "orange-button-5"
+      assert Map.keys(l.instance_tracking) == ["abc123", "abc456", "abc789"]
+
+      # Host is killed forcefully and starts again using the same seed private key
+      l =
+        Lattice.new()
+        |> Lattice.apply_event(started)
+
+      assert l.providers == %{}
+      assert l.actors == %{}
+    end
+
     test "Host started event produces a healthy host and stopped removes host" do
       started =
         CloudEvents.host_started(
@@ -133,7 +174,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  ],
                  issuer: "",
                  name: "unavailable",
-                 tags: []
+                 tags: ""
                },
                "Mxxxy" => %LatticeObserver.Observed.Actor{
                  call_alias: "",
@@ -150,7 +191,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  ],
                  issuer: "",
                  name: "unavailable",
-                 tags: []
+                 tags: ""
                }
              }
 
@@ -170,7 +211,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  issuer: "",
                  link_name: "default",
                  name: "unavailable",
-                 tags: []
+                 tags: ""
                }
              }
     end
