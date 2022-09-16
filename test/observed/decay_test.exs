@@ -104,7 +104,7 @@ defmodule LatticeObserverTest.Observed.DecayTest do
                  ],
                  issuer: "ATESTxxx",
                  name: "Test Actor",
-                 tags: []
+                 tags: ""
                }
              }
 
@@ -143,7 +143,7 @@ defmodule LatticeObserverTest.Observed.DecayTest do
                  ],
                  issuer: "ATESTxxx",
                  name: "Test Actor",
-                 tags: []
+                 tags: ""
                }
              }
 
