@@ -1,4 +1,6 @@
 defmodule LatticeObserver.Observed.EventProcessor do
+  @annotation_app_spec "wasmcloud.dev/appspec"
+
   alias LatticeObserver.Observed.{Lattice, Provider, Host, Actor, Instance, LinkDefinition}
 
   defp get_claim(_l = %Lattice{claims: claims}, field, pk, default \\ "") do
@@ -193,17 +195,48 @@ defmodule LatticeObserver.Observed.EventProcessor do
   def record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
     labels = Map.get(data, "labels", %{})
     friendly_name = Map.get(data, "friendly_name", "")
+    annotations = Map.get(data, "annotations", %{})
+    spec = Map.get(annotations, @annotation_app_spec, "")
+
+    # Heartbeats are now considered authoritative, so the previously stored
+    # actor and provider list are wiped prior to recording the heartbeat, but the
+    # host (and its "first seen" time) are not.
+    l =
+      %Lattice{
+        l
+        | actors:
+            l.actors
+            |> Enum.map(fn {k, v} ->
+              {k,
+               %Actor{
+                 v
+                 | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
+               }}
+            end)
+            |> Enum.into(%{}),
+          providers:
+            l.providers
+            |> Enum.map(fn {k, v} ->
+              {k,
+               %Provider{
+                 v
+                 | instances: v.instances |> Enum.reject(fn i -> i.host_id == source_host end)
+               }}
+            end)
+            |> Enum.into(%{})
+      }
+      |> strip_instanceless_entities()
+
     l = record_host(l, source_host, labels, stamp, friendly_name)
 
     l =
       List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
-        # TODO - once the host can emit annotations we can pull the spec
         put_actor_instance(
           acc,
           source_host,
           x["public_key"],
           x["instance_id"],
-          "",
+          spec,
           stamp,
           %{}
         )
@@ -211,7 +244,6 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     l =
       List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
-        # TODO - once the host emits annotations we can pull the spec
         put_provider_instance(
           acc,
           source_host,
@@ -219,7 +251,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
           x["link_name"],
           x["contract_id"],
           x["instance_id"],
-          "",
+          spec,
           stamp,
           %{}
         )
