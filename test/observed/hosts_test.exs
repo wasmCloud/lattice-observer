@@ -156,8 +156,31 @@ defmodule LatticeObserverTest.Observed.HostsTest do
           ]
         )
 
-      l = Lattice.apply_event(Lattice.new(), hb3)
+      # Scenario: heartbeat contains fewer actors than the previous one, yet
+      # the lattice did not receive an actor stopped event.
+      hb4 =
+        CloudEvents.host_heartbeat(
+          @test_host,
+          %{foo: "bar"},
+          [
+            %{
+              "public_key" => "Mxxxx",
+              "instance_id" => "iid1"
+            }
+          ],
+          [
+            %{
+              "public_key" => "Vxxxxx",
+              "instance_id" => "iid3",
+              "contract_id" => "wasmcloud:test",
+              "link_name" => "default"
+            }
+          ]
+        )
 
+      l = Lattice.apply_event(Lattice.new(), hb3) |> Lattice.apply_event(hb4)
+
+      # The Mxxxy actor isn't here because of authoritative heartbeats
       assert l.actors == %{
                "Mxxxx" => %LatticeObserver.Observed.Actor{
                  call_alias: "",
@@ -167,23 +190,6 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                    %LatticeObserver.Observed.Instance{
                      host_id: "Nxxx",
                      id: "iid1",
-                     revision: 0,
-                     spec_id: "",
-                     version: ""
-                   }
-                 ],
-                 issuer: "",
-                 name: "unavailable",
-                 tags: ""
-               },
-               "Mxxxy" => %LatticeObserver.Observed.Actor{
-                 call_alias: "",
-                 capabilities: [],
-                 id: "Mxxxy",
-                 instances: [
-                   %LatticeObserver.Observed.Instance{
-                     host_id: "Nxxx",
-                     id: "iid2",
                      revision: 0,
                      spec_id: "",
                      version: ""
