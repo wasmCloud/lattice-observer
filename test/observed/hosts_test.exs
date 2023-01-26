@@ -115,6 +115,26 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                Lattice.new()
     end
 
+    # updated heartbeat shape
+    #  "actors": {
+    #   "MB2ZQB6ROOMAYBO4ZCTFYWN7YIVBWA3MTKZYAQKJMTIHE2ELLRW2E3ZW": 10
+    #   },
+    #   "friendly_name": "wandering-meadow-5880",
+    #   "labels": {
+    #     "hostcore.arch": "aarch64",
+    #     "hostcore.os": "macos",
+    #     "hostcore.osfamily": "unix"
+    #   },
+    #   "providers": [
+    #     {
+    #       "link_name": "default",
+    #       "public_key": "VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M"
+    #     }
+    #   ],
+    #   "uptime_human": "1 minute, 32 seconds",
+    #   "uptime_seconds": 92,
+    #   "version": "0.60.0"
+
     test "Properly records host heartbeat" do
       hb = CloudEvents.host_heartbeat(@test_host, %{foo: "bar", baz: "biz"})
       stamp = EventProcessor.timestamp_from_iso8601(hb.time)
@@ -136,20 +156,13 @@ defmodule LatticeObserverTest.Observed.HostsTest do
         CloudEvents.host_heartbeat(
           @test_host,
           %{foo: "bar"},
-          [
-            %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "iid1"
-            },
-            %{
-              "public_key" => "Mxxxy",
-              "instance_id" => "iid2"
-            }
-          ],
+          %{
+            "Mxxxx" => 1,
+            "Mxxxy" => 2
+          },
           [
             %{
               "public_key" => "Vxxxxx",
-              "instance_id" => "iid3",
               "contract_id" => "wasmcloud:test",
               "link_name" => "default"
             }
@@ -162,16 +175,12 @@ defmodule LatticeObserverTest.Observed.HostsTest do
         CloudEvents.host_heartbeat(
           @test_host,
           %{foo: "bar"},
-          [
-            %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "iid1"
-            }
-          ],
+          %{
+            "Mxxxx" => 1
+          },
           [
             %{
               "public_key" => "Vxxxxx",
-              "instance_id" => "iid3",
               "contract_id" => "wasmcloud:test",
               "link_name" => "default"
             }
@@ -189,7 +198,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  instances: [
                    %LatticeObserver.Observed.Instance{
                      host_id: "Nxxx",
-                     id: "iid1",
+                     id: "n/a",
                      revision: 0,
                      spec_id: "",
                      version: ""
@@ -203,12 +212,12 @@ defmodule LatticeObserverTest.Observed.HostsTest do
 
       assert l.providers == %{
                {"Vxxxxx", "default"} => %LatticeObserver.Observed.Provider{
-                 contract_id: "wasmcloud:test",
+                 contract_id: "n/a",
                  id: "Vxxxxx",
                  instances: [
                    %LatticeObserver.Observed.Instance{
                      host_id: "Nxxx",
-                     id: "iid3",
+                     id: "n/a",
                      revision: 0,
                      spec_id: "",
                      version: ""

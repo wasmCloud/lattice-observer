@@ -103,7 +103,7 @@ defmodule TestSupport.CloudEvents do
     |> LatticeObserver.CloudEvent.new("provider_stopped", host)
   end
 
-  def host_heartbeat(host, labels, actors \\ [], providers \\ []) do
+  def host_heartbeat(host, labels, actors \\ %{}, providers \\ []) do
     %{
       "actors" => actors,
       "providers" => providers,
