@@ -135,6 +135,113 @@ defmodule LatticeObserverTest.Observed.HostsTest do
     #   "uptime_seconds": 92,
     #   "version": "0.60.0"
 
+    test "Propertly records LEGACY host heartbeat" do
+      hb = CloudEvents.host_heartbeat_old(@test_host, %{foo: "bar", baz: "biz"})
+      stamp = EventProcessor.timestamp_from_iso8601(hb.time)
+      l = Lattice.apply_event(Lattice.new(), hb)
+
+      assert l.hosts[@test_host].labels == %{baz: "biz", foo: "bar"}
+      assert l.hosts[@test_host].status == :healthy
+      assert l.hosts[@test_host].last_seen == stamp
+
+      hb2 = CloudEvents.host_heartbeat_old(@test_host, %{foo: "bar", baz: "biz"})
+      stamp2 = EventProcessor.timestamp_from_iso8601(hb2.time)
+      l = Lattice.apply_event(l, hb2)
+
+      assert l.hosts[@test_host].labels == %{baz: "biz", foo: "bar"}
+      assert l.hosts[@test_host].status == :healthy
+      assert l.hosts[@test_host].last_seen == stamp2
+
+      hb3 =
+        CloudEvents.host_heartbeat(
+          @test_host,
+          %{foo: "bar"},
+          [
+            %{
+              "public_key" => "Mxxxx",
+              "instance_id" => "iid1"
+            },
+            %{
+              "public_key" => "Mxxxy",
+              "instance_id" => "iid2"
+            }
+          ],
+          [
+            %{
+              "public_key" => "Vxxxxx",
+              "instance_id" => "iid3",
+              "contract_id" => "wasmcloud:test",
+              "link_name" => "default"
+            }
+          ]
+        )
+
+      # Scenario: heartbeat contains fewer actors than the previous one, yet
+      # the lattice did not receive an actor stopped event.
+      hb4 =
+        CloudEvents.host_heartbeat(
+          @test_host,
+          %{foo: "bar"},
+          [
+            %{
+              "public_key" => "Mxxxx",
+              "instance_id" => "iid1"
+            }
+          ],
+          [
+            %{
+              "public_key" => "Vxxxxx",
+              "instance_id" => "iid3",
+              "contract_id" => "wasmcloud:test",
+              "link_name" => "default"
+            }
+          ]
+        )
+
+      l = Lattice.apply_event(Lattice.new(), hb3) |> Lattice.apply_event(hb4)
+
+      # The Mxxxy actor isn't here because of authoritative heartbeats
+      assert l.actors == %{
+               "Mxxxx" => %LatticeObserver.Observed.Actor{
+                 call_alias: "",
+                 capabilities: [],
+                 id: "Mxxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "iid1",
+                     revision: 0,
+                     spec_id: "",
+                     version: ""
+                   }
+                 ],
+                 issuer: "",
+                 name: "unavailable",
+                 tags: ""
+               }
+             }
+
+      assert l.providers == %{
+               {"Vxxxxx", "default"} => %LatticeObserver.Observed.Provider{
+                 contract_id: "wasmcloud:test",
+                 id: "Vxxxxx",
+                 instances: [
+                   %LatticeObserver.Observed.Instance{
+                     host_id: "Nxxx",
+                     id: "iid3",
+                     revision: 0,
+                     spec_id: "",
+                     version: ""
+                   }
+                 ],
+                 issuer: "",
+                 link_name: "default",
+                 name: "unavailable",
+                 tags: ""
+               }
+             }
+    end
+
     test "Properly records host heartbeat" do
       hb = CloudEvents.host_heartbeat(@test_host, %{foo: "bar", baz: "biz"})
       stamp = EventProcessor.timestamp_from_iso8601(hb.time)

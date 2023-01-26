@@ -152,4 +152,13 @@ defmodule TestSupport.CloudEvents do
     }
     |> LatticeObserver.CloudEvent.new("invocation_failed", host)
   end
+
+  def host_heartbeat_old(host, labels, actors \\ [], providers \\ []) do
+    %{
+      "actors" => actors,
+      "providers" => providers,
+      "labels" => labels
+    }
+    |> LatticeObserver.CloudEvent.new("host_heartbeat", host)
+  end
 end
