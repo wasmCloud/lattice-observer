@@ -251,6 +251,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     # legacy heartbeat has a list for the actors field...
     # default to "new format" if this field is missing
+    # TODO - once a few wasmCloud OTP releases have gone by with the new heartbeat format, stop
+    # parsing/processing the legacy structure
     l =
       if is_list(Map.get(data, "actors", %{})) do
         put_legacy_instances(l, source_host, spec, stamp, data)
@@ -279,7 +281,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
             source_host,
             x["public_key"],
             x["link_name"],
-            "n/a",
+            Map.get(x, "contract_id", "n/a"),
             "n/a",
             spec,
             stamp,

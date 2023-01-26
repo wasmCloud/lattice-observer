@@ -319,7 +319,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
 
       assert l.providers == %{
                {"Vxxxxx", "default"} => %LatticeObserver.Observed.Provider{
-                 contract_id: "n/a",
+                 contract_id: "wasmcloud:test",
                  id: "Vxxxxx",
                  instances: [
                    %LatticeObserver.Observed.Instance{
