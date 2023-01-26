@@ -250,8 +250,9 @@ defmodule LatticeObserver.Observed.EventProcessor do
     l = record_host(l, source_host, labels, stamp, friendly_name)
 
     # legacy heartbeat has a list for the actors field...
+    # default to "new format" if this field is missing
     l =
-      if is_list(Map.get(data, "actors")) do
+      if is_list(Map.get(data, "actors", %{})) do
         put_legacy_instances(l, source_host, spec, stamp, data)
       else
         actors_expanded =
