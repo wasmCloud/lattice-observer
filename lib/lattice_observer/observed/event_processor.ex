@@ -192,6 +192,26 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
+  # New heartbeat format
+  #  "actors": {
+  #   "MB2ZQB6ROOMAYBO4ZCTFYWN7YIVBWA3MTKZYAQKJMTIHE2ELLRW2E3ZW": 10
+  #   },
+  #   "friendly_name": "wandering-meadow-5880",
+  #   "labels": {
+  #     "hostcore.arch": "aarch64",
+  #     "hostcore.os": "macos",
+  #     "hostcore.osfamily": "unix"
+  #   },
+  #   "providers": [
+  #     {
+  #       "link_name": "default",
+  #       "public_key": "VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M"
+  #     }
+  #   ],
+  #   "uptime_human": "1 minute, 32 seconds",
+  #   "uptime_seconds": 92,
+  #   "version": "0.60.0"
+
   def record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
     labels = Map.get(data, "labels", %{})
     friendly_name = Map.get(data, "friendly_name", "")
@@ -229,6 +249,51 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     l = record_host(l, source_host, labels, stamp, friendly_name)
 
+    # legacy heartbeat has a list for the actors field...
+    # default to "new format" if this field is missing
+    # TODO - once a few wasmCloud OTP releases have gone by with the new heartbeat format, stop
+    # parsing/processing the legacy structure
+    l =
+      if is_list(Map.get(data, "actors", %{})) do
+        put_legacy_instances(l, source_host, spec, stamp, data)
+      else
+        actors_expanded =
+          Enum.flat_map(Map.get(data, "actors", %{}), fn {k, count} ->
+            Enum.map(1..count, fn _ -> k end)
+          end)
+
+        l =
+          List.foldl(actors_expanded, l, fn pk, acc ->
+            put_actor_instance(
+              acc,
+              source_host,
+              pk,
+              "n/a",
+              spec,
+              stamp,
+              %{}
+            )
+          end)
+
+        List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
+          put_provider_instance(
+            acc,
+            source_host,
+            x["public_key"],
+            x["link_name"],
+            Map.get(x, "contract_id", "n/a"),
+            "n/a",
+            spec,
+            stamp,
+            %{}
+          )
+        end)
+      end
+
+    l
+  end
+
+  defp put_legacy_instances(l = %Lattice{}, source_host, spec, stamp, data) do
     l =
       List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
         put_actor_instance(
@@ -242,22 +307,19 @@ defmodule LatticeObserver.Observed.EventProcessor do
         )
       end)
 
-    l =
-      List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
-        put_provider_instance(
-          acc,
-          source_host,
-          x["public_key"],
-          x["link_name"],
-          x["contract_id"],
-          x["instance_id"],
-          spec,
-          stamp,
-          %{}
-        )
-      end)
-
-    l
+    List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
+      put_provider_instance(
+        acc,
+        source_host,
+        x["public_key"],
+        x["link_name"],
+        x["contract_id"],
+        x["instance_id"],
+        spec,
+        stamp,
+        %{}
+      )
+    end)
   end
 
   def record_host(l = %Lattice{}, source_host, labels, stamp, friendly_name \\ "") do

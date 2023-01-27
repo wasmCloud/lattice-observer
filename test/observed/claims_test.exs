@@ -41,16 +41,9 @@ defmodule LatticeObserverTest.Observed.ClaimsTest do
         CloudEvents.host_heartbeat(
           "Nxxxx",
           %{foo: "bar", baz: "biz"},
+          %{"Mxxxx" => 1},
           [
             %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "42"
-            }
-          ],
-          [
-            %{
-              "contract_id" => "wasmcloud:test",
-              "instance_id" => "43",
               "link_name" => "default",
               "public_key" => "Vxxxx"
             }
@@ -113,16 +106,9 @@ defmodule LatticeObserverTest.Observed.ClaimsTest do
         CloudEvents.host_heartbeat(
           "Nxxxx",
           %{foo: "bar", baz: "biz"},
+          %{"Mxxxx" => 1},
           [
             %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "42"
-            }
-          ],
-          [
-            %{
-              "contract_id" => "wasmcloud:test",
-              "instance_id" => "43",
               "link_name" => "default",
               "public_key" => "Vxxxx"
             }
