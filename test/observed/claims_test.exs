@@ -1,6 +1,6 @@
 defmodule LatticeObserverTest.Observed.ClaimsTest do
   use ExUnit.Case
-  alias LatticeObserver.Observed.{Lattice, Instance, Claims}
+  alias LatticeObserver.Observed.{Lattice, Claims}
   alias TestSupport.CloudEvents
 
   describe "Claims cache works appropriately" do

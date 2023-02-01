@@ -76,12 +76,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
       revision: Map.get(claims, "revision", get_claim(l, :rev, pk, 0))
     }
 
-    actor =
-      if actor.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
-        %{actor | instances: [instance | actor.instances]}
-      else
-        actor
-      end
+    actor = %Actor{actor | instances: [instance | actor.instances]}
 
     %Lattice{
       l
@@ -116,12 +111,16 @@ defmodule LatticeObserver.Observed.EventProcessor do
       revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> parse_revision())
     }
 
-    provider =
-      if provider.instances |> Enum.find(fn i -> i.id == instance_id end) == nil do
-        %Provider{provider | instances: [instance | provider.instances]}
-      else
-        provider
-      end
+    # Remove old provider instance for this host and link name
+    provider = %Provider{
+      provider
+      | instances:
+          provider.instances
+          |> Enum.reject(fn i -> i.host_id == source_host end)
+    }
+
+    # Add this instance back to the list
+    provider = %Provider{provider | instances: [instance | provider.instances]}
 
     %Lattice{
       l
@@ -131,19 +130,18 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  def remove_provider_instance(l, _source_host, pk, link_name, instance_id, _spec) do
+  def remove_provider_instance(l, source_host, pk, link_name, _spec) do
     provider = l.providers[{pk, link_name}]
 
     if provider != nil do
       provider = %Provider{
         provider
-        | instances: provider.instances |> Enum.reject(fn i -> i.id == instance_id end)
+        | instances: provider.instances |> Enum.reject(fn i -> i.host_id == source_host end)
       }
 
       %Lattice{
         l
-        | providers: Map.put(l.providers, {pk, link_name}, provider),
-          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
+        | providers: Map.put(l.providers, {pk, link_name}, provider)
       }
       |> strip_instanceless_entities()
     else

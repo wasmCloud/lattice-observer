@@ -311,8 +311,7 @@ defmodule LatticeObserver.Observed.Lattice do
           data:
             %{
               "link_name" => link_name,
-              "public_key" => pk,
-              "instance_id" => instance_id
+              "public_key" => pk
             } = d,
           datacontenttype: "application/json",
           source: source_host,
@@ -322,7 +321,7 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     annotations = Map.get(d, "annotations", %{})
     spec = Map.get(annotations, @annotation_app_spec, "")
-    EventProcessor.remove_provider_instance(l, source_host, pk, link_name, instance_id, spec)
+    EventProcessor.remove_provider_instance(l, source_host, pk, link_name, spec)
   end
 
   def apply_event(

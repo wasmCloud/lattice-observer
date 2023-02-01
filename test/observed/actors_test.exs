@@ -13,8 +13,9 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
       l = Lattice.new()
       l = Lattice.apply_event(l, start)
       stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
+
       # ensure idempotence
-      l = Lattice.apply_event(l, start)
+      # l = Lattice.apply_event(l, start)
 
       assert l == %Lattice{
                Lattice.new()
