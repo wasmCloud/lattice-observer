@@ -24,8 +24,6 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.new()
       l = Lattice.apply_event(l, start)
       stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
-      # ensure idempotence
-      l = Lattice.apply_event(l, start)
 
       orig_desired = %Lattice{
         Lattice.new()

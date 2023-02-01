@@ -63,7 +63,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, stamp, claims)
+  def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, _stamp, claims)
       when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do
     actor = Map.get(l.actors, pk, Actor.new(pk, "unavailable"))
     actor = merge_actor(actor, l, claims)
@@ -80,9 +80,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     %Lattice{
       l
-      | actors: Map.put(l.actors, pk, actor),
-        instance_tracking:
-          Map.put(l.instance_tracking, instance.id, timestamp_from_iso8601(stamp))
+      | actors: Map.put(l.actors, pk, actor)
     }
   end
 
@@ -133,6 +131,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
   def remove_provider_instance(l, source_host, pk, link_name, _spec) do
     provider = l.providers[{pk, link_name}]
 
+    # only one provider+link name can exist per host, so this is guaranteed to
+    # remove that provider since the key is already pk+link.
     if provider != nil do
       provider = %Provider{
         provider
@@ -376,19 +376,22 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  def remove_actor_instance(l = %Lattice{}, _host_id, pk, instance_id, _spec) do
+  def remove_actor_instance(l = %Lattice{}, host_id, pk, instance_id, _spec) do
     actor = l.actors[pk]
 
     if actor != nil do
+      # Since there's no longer any unique distinction between actor instances on
+      # the host, we can simply remove any one we like
+      instances_on_host = Enum.filter(actor.instances, fn i -> i.host_id == host_id end)
+
       actor = %Actor{
         actor
-        | instances: actor.instances |> Enum.reject(fn i -> i.id == instance_id end)
+        | instances: Enum.drop(instances_on_host, 1)
       }
 
       %Lattice{
         l
-        | actors: Map.put(l.actors, pk, actor),
-          instance_tracking: l.instance_tracking |> Map.delete(instance_id)
+        | actors: Map.put(l.actors, pk, actor)
       }
       |> strip_instanceless_entities()
     else
