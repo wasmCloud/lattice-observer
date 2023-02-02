@@ -6,6 +6,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
   @test_spec "testapp"
   @test_spec_2 "othertestapp"
   @test_host "Nxxx"
+  @test_host2 "Nxxy"
   @test_contract "wasmcloud:test"
 
   describe "Observed Lattice Monitors Provider Events" do
@@ -15,7 +16,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           "Vxxx",
           @test_contract,
           "default",
-          "abc123",
+          "n/a",
           @test_spec,
           @test_host
         )
@@ -23,13 +24,11 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       l = Lattice.new()
       l = Lattice.apply_event(l, start)
       stamp1 = EventProcessor.timestamp_from_iso8601(start.time)
-      # ensure idempotence
-      l = Lattice.apply_event(l, start)
 
       orig_desired = %Lattice{
         Lattice.new()
         | instance_tracking: %{
-            "abc123" => stamp1
+            "n/a" => stamp1
           },
           claims: %{
             "Vxxx" => %LatticeObserver.Observed.Claims{
@@ -50,7 +49,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
               instances: [
                 %Instance{
                   host_id: "Nxxx",
-                  id: "abc123",
+                  id: "n/a",
                   revision: 2,
                   spec_id: "testapp",
                   version: "1.0"
@@ -71,7 +70,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                  %{
                    contract_id: "wasmcloud:test",
                    host_id: "Nxxx",
-                   instance_id: "abc123",
+                   instance_id: "n/a",
                    link_name: "default",
                    provider_id: "Vxxx"
                  }
@@ -89,9 +88,11 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
 
       l = Lattice.apply_event(l, stop)
 
+      # Note that the instance tracking field is now deprecated/useless
       desired = %Lattice{
         Lattice.new()
         | providers: %{},
+          instance_tracking: %{"n/a" => stamp1},
           claims: %{
             "Vxxx" => %LatticeObserver.Observed.Claims{
               call_alias: nil,
@@ -119,20 +120,19 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           "Vxxx",
           @test_contract,
           "default",
-          "abc123",
+          "n/a",
           @test_spec,
           @test_host
         )
 
-      stamp = EventProcessor.timestamp_from_iso8601(start.time)
       l = Lattice.apply_event(Lattice.new(), start)
 
       start2 =
         CloudEvents.provider_started(
           "Vxxx",
           @test_contract,
-          "default",
-          "abc456",
+          "not-so-default",
+          "n/a",
           @test_spec,
           @test_host
         )
@@ -142,7 +142,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
 
       assert l == %Lattice{
                Lattice.new()
-               | instance_tracking: %{"abc123" => stamp, "abc456" => stamp2},
+               | instance_tracking: %{"n/a" => stamp2},
                  providers: %{
                    {"Vxxx", "default"} => %LatticeObserver.Observed.Provider{
                      contract_id: "wasmcloud:test",
@@ -150,14 +150,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                      instances: [
                        %LatticeObserver.Observed.Instance{
                          host_id: "Nxxx",
-                         id: "abc456",
-                         revision: 2,
-                         spec_id: "testapp",
-                         version: "1.0"
-                       },
-                       %LatticeObserver.Observed.Instance{
-                         host_id: "Nxxx",
-                         id: "abc123",
+                         id: "n/a",
                          revision: 2,
                          spec_id: "testapp",
                          version: "1.0"
@@ -165,6 +158,23 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                      ],
                      issuer: "ATESTxxx",
                      link_name: "default",
+                     name: "test provider",
+                     tags: "a,b"
+                   },
+                   {"Vxxx", "not-so-default"} => %LatticeObserver.Observed.Provider{
+                     contract_id: "wasmcloud:test",
+                     id: "Vxxx",
+                     instances: [
+                       %LatticeObserver.Observed.Instance{
+                         host_id: "Nxxx",
+                         id: "n/a",
+                         revision: 2,
+                         spec_id: "testapp",
+                         version: "1.0"
+                       }
+                     ],
+                     issuer: "ATESTxxx",
+                     link_name: "not-so-default",
                      name: "test provider",
                      tags: "a,b"
                    }
@@ -189,9 +199,9 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           "Vxxx",
           @test_contract,
           "default",
-          "abc789",
+          "n/a",
           @test_spec_2,
-          @test_host
+          @test_host2
         )
 
       stamp3 = EventProcessor.timestamp_from_iso8601(start3.time)
@@ -201,9 +211,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
       assert l == %Lattice{
                Lattice.new()
                | instance_tracking: %{
-                   "abc123" => stamp,
-                   "abc456" => stamp2,
-                   "abc789" => stamp3
+                   "n/a" => stamp3
                  },
                  providers: %{
                    {"Vxxx", "default"} => %Provider{
@@ -214,28 +222,38 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                      id: "Vxxx",
                      instances: [
                        %Instance{
-                         host_id: "Nxxx",
-                         id: "abc789",
+                         host_id: "Nxxy",
+                         id: "n/a",
                          spec_id: "othertestapp",
                          revision: 2,
                          version: "1.0"
                        },
                        %Instance{
                          host_id: "Nxxx",
-                         id: "abc456",
-                         spec_id: "testapp",
-                         revision: 2,
-                         version: "1.0"
-                       },
-                       %Instance{
-                         host_id: "Nxxx",
-                         id: "abc123",
+                         id: "n/a",
                          spec_id: "testapp",
                          revision: 2,
                          version: "1.0"
                        }
                      ],
                      link_name: "default"
+                   },
+                   {"Vxxx", "not-so-default"} => %LatticeObserver.Observed.Provider{
+                     contract_id: "wasmcloud:test",
+                     id: "Vxxx",
+                     instances: [
+                       %LatticeObserver.Observed.Instance{
+                         host_id: "Nxxx",
+                         id: "n/a",
+                         revision: 2,
+                         spec_id: "testapp",
+                         version: "1.0"
+                       }
+                     ],
+                     issuer: "ATESTxxx",
+                     link_name: "not-so-default",
+                     name: "test provider",
+                     tags: "a,b"
                    }
                  },
                  claims: %{

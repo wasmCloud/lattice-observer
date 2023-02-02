@@ -48,7 +48,6 @@ defmodule LatticeObserverTest.Observed.HostsTest do
 
       assert Map.keys(l.hosts) == ["Nxxxy"]
       assert (l.hosts |> Map.values() |> List.first()).friendly_name == "yellow-cat-6"
-      assert Map.keys(l.instance_tracking) == ["abc123", "abc456", "abc789"]
       assert l.providers == %{}
       assert l.actors == %{}
     end
@@ -83,7 +82,6 @@ defmodule LatticeObserverTest.Observed.HostsTest do
 
       assert Map.keys(l.hosts) == ["Nxxx"]
       assert (l.hosts |> Map.values() |> List.first()).friendly_name == "orange-button-5"
-      assert Map.keys(l.instance_tracking) == ["abc123", "abc456", "abc789"]
 
       # Host is killed forcefully and starts again using the same seed private key
       l =
