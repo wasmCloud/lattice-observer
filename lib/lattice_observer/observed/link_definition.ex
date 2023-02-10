@@ -12,10 +12,10 @@ defmodule LatticeObserver.Observed.LinkDefinition do
   Link definitions are uniquely identified by the actor ID, provider ID, and link name.
   """
   @type t :: %LinkDefinition{
-          actor_id: String.t(),
-          provider_id: String.t(),
-          contract_id: String.t(),
-          link_name: String.t(),
-          values: Map.t()
+          actor_id: binary(),
+          provider_id: binary(),
+          contract_id: binary(),
+          link_name: binary(),
+          values: map()
         }
 end

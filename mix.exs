@@ -4,11 +4,12 @@ defmodule LatticeObserver.MixProject do
   def project do
     [
       app: :lattice_observer,
-      version: "0.3.0",
+      version: "0.4.0",
       elixir: "~> 1.12",
       elixirc_paths: compiler_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [plt_add_deps: :apps_direct]
     ]
   end
 
@@ -24,6 +25,7 @@ defmodule LatticeObserver.MixProject do
   defp deps do
     [
       {:cloudevents, "~> 0.6.1"},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:uuid, "~> 1.1"},
       {:jason, "~> 1.2"}
     ]

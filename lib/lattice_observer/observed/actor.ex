@@ -9,12 +9,12 @@ defmodule LatticeObserver.Observed.Actor do
   An actor observed through event receipt within the lattice.
   """
   @type t :: %Actor{
-          id: String.t(),
-          name: String.t(),
-          capabilities: [String.t()],
-          issuer: String.t(),
-          tags: String.t(),
-          call_alias: String.t(),
+          id: binary(),
+          name: binary(),
+          capabilities: [binary()],
+          issuer: binary(),
+          tags: binary(),
+          call_alias: binary(),
           instances: [Instance.t()]
         }
 

@@ -11,10 +11,10 @@ defmodule LatticeObserver.Observed.Instance do
   both have instances while link definitions do not.
   """
   @type t :: %Instance{
-          id: String.t(),
-          host_id: String.t(),
-          spec_id: String.t(),
-          version: String.t(),
-          revision: Integer.t()
+          id: binary(),
+          host_id: binary(),
+          spec_id: binary(),
+          version: binary(),
+          revision: integer()
         }
 end

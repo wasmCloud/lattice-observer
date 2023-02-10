@@ -32,8 +32,8 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           },
           claims: %{
             "Vxxx" => %LatticeObserver.Observed.Claims{
-              call_alias: nil,
-              caps: nil,
+              call_alias: "",
+              caps: "",
               iss: "ATESTxxx",
               name: "test provider",
               rev: 2,
@@ -95,8 +95,8 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
           instance_tracking: %{"n/a" => stamp1},
           claims: %{
             "Vxxx" => %LatticeObserver.Observed.Claims{
-              call_alias: nil,
-              caps: nil,
+              call_alias: "",
+              caps: "",
               iss: "ATESTxxx",
               name: "test provider",
               rev: 2,
@@ -181,8 +181,8 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                  },
                  claims: %{
                    "Vxxx" => %LatticeObserver.Observed.Claims{
-                     call_alias: nil,
-                     caps: nil,
+                     call_alias: "",
+                     caps: "",
                      iss: "ATESTxxx",
                      name: "test provider",
                      rev: 2,
@@ -258,8 +258,8 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                  },
                  claims: %{
                    "Vxxx" => %LatticeObserver.Observed.Claims{
-                     call_alias: nil,
-                     caps: nil,
+                     call_alias: "",
+                     caps: "",
                      iss: "ATESTxxx",
                      name: "test provider",
                      rev: 2,
