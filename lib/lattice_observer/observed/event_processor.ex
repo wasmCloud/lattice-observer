@@ -349,6 +349,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
         host,
         %{
           last_seen: timestamp_from_iso8601(stamp),
+          uptime_seconds: uptime_seconds,
           status: :healthy
         }
       )
