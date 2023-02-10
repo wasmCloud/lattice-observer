@@ -144,6 +144,8 @@ defmodule LatticeObserver.Observed.Lattice do
       ) do
     labels = Map.get(data, "labels", %{})
     friendly_name = Map.get(data, "friendly_name", "")
+    uptime_seconds = Map.get(data, "uptime_seconds", 0)
+    version = Map.get(data, "version", "v0.0.0")
     # First, remove any leftover host artifacts from the lattice,
     # then record the host started event.
     #
@@ -151,7 +153,14 @@ defmodule LatticeObserver.Observed.Lattice do
     # circumstances (e.g. getting kill -9'ed) and retains the same host key properly
     # clears the cache.
     EventProcessor.remove_host(l, source_host)
-    |> EventProcessor.record_host(source_host, labels, stamp, friendly_name)
+    |> EventProcessor.record_host(
+      source_host,
+      labels,
+      stamp,
+      friendly_name,
+      uptime_seconds,
+      version
+    )
   end
 
   def apply_event(

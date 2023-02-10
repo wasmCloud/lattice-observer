@@ -215,6 +215,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
     friendly_name = Map.get(data, "friendly_name", "")
     annotations = Map.get(data, "annotations", %{})
     spec = Map.get(annotations, @annotation_app_spec, "")
+    uptime_seconds = Map.get(data, "uptime_seconds", 0)
+    version = Map.get(data, "version", "v0.0.0")
 
     # Heartbeats are now considered authoritative, so the previously stored
     # actor and provider list are wiped prior to recording the heartbeat, but the
@@ -245,7 +247,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
       }
       |> strip_instanceless_entities()
 
-    l = record_host(l, source_host, labels, stamp, friendly_name)
+    l = record_host(l, source_host, labels, stamp, friendly_name, uptime_seconds, version)
 
     # legacy heartbeat has a list for the actors field...
     # default to "new format" if this field is missing
@@ -320,13 +322,23 @@ defmodule LatticeObserver.Observed.EventProcessor do
     end)
   end
 
-  def record_host(l = %Lattice{}, source_host, labels, stamp, friendly_name \\ "") do
+  def record_host(
+        l = %Lattice{},
+        source_host,
+        labels,
+        stamp,
+        friendly_name,
+        uptime_seconds,
+        version
+      ) do
     host =
       Map.get(l.hosts, source_host, %Host{
         id: source_host,
         labels: labels,
         first_seen: timestamp_from_iso8601(stamp),
-        friendly_name: friendly_name
+        friendly_name: friendly_name,
+        uptime_seconds: uptime_seconds,
+        version: version
       })
 
     # Every time we see a host, we set the last seen stamp
