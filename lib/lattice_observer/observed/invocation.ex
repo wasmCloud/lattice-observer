@@ -2,17 +2,14 @@ defmodule LatticeObserver.Observed.Invocation do
   alias LatticeObserver.Observed.Lattice
   alias __MODULE__.Entity
 
-  @type invocationlog_key :: {from :: Entity.t(), to :: Entity.t(), operation :: String.t()}
-  @type invocationlog_map :: %{required(invocationlog_key()) => InvocationLog.t()}
-
   defmodule InvocationLog do
     @type t :: %InvocationLog{
             from: Entity.t(),
             to: Entity.t(),
-            operation: String.t(),
-            total_bytes: Integer.t(),
-            fail_count: Integer.t(),
-            success_count: Integer.t()
+            operation: binary(),
+            total_bytes: integer(),
+            fail_count: integer(),
+            success_count: integer()
           }
 
     defstruct [:from, :to, :operation, :total_bytes, :fail_count, :success_count]
@@ -31,9 +28,9 @@ defmodule LatticeObserver.Observed.Invocation do
 
   defmodule Entity do
     @type t :: %Entity{
-            public_key: String.t(),
-            link_name: String.t() | nil,
-            contract_id: String.t() | nil
+            public_key: binary(),
+            link_name: binary() | nil,
+            contract_id: binary() | nil
           }
     defstruct [:public_key, :link_name, :contract_id]
 
@@ -56,12 +53,15 @@ defmodule LatticeObserver.Observed.Invocation do
     end
   end
 
+  @type invocationlog_key :: {from :: Entity.t(), to :: Entity.t(), operation :: binary()}
+  @type invocationlog_map :: %{required(invocationlog_key()) => InvocationLog.t()}
+
   @spec record_invocation_success(
           Lattice.t(),
-          source :: Map.t(),
-          dest :: Map.t(),
-          operation :: String.t(),
-          Integer.t()
+          source :: map(),
+          dest :: map(),
+          operation :: binary(),
+          integer()
         ) ::
           Lattice.t()
   def record_invocation_success(l = %Lattice{}, source, dest, operation, bytes) do
@@ -82,10 +82,10 @@ defmodule LatticeObserver.Observed.Invocation do
 
   @spec record_invocation_failed(
           Lattice.t(),
-          source :: Map.t(),
-          dest :: Map.t(),
-          operation :: String.t(),
-          Integer.t()
+          source :: map(),
+          dest :: map(),
+          operation :: binary(),
+          integer()
         ) ::
           Lattice.t()
   def record_invocation_failed(l = %Lattice{}, source, dest, operation, bytes) do

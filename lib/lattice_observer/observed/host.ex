@@ -8,11 +8,11 @@ defmodule LatticeObserver.Observed.Host do
   Represents a host observed through heartbeat and start events within a lattice
   """
   @type t :: %Host{
-          id: String.t(),
-          labels: Map.t(),
+          id: binary(),
+          labels: map(),
           status: LatticeObserver.Observed.Lattice.entitystatus(),
-          last_seen: Datetime.t(),
-          first_seen: Datetime.t(),
+          last_seen: DateTime.t(),
+          first_seen: DateTime.t(),
           friendly_name: String.t()
         }
 end

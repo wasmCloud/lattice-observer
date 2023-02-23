@@ -376,7 +376,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  def remove_actor_instance(l = %Lattice{}, host_id, pk, instance_id, _spec) do
+  def remove_actor_instance(l = %Lattice{}, host_id, pk, _spec) do
     actor = l.actors[pk]
 
     if actor != nil do

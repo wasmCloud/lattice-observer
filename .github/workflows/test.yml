@@ -59,6 +59,10 @@ jobs:
         if: ${{ !startswith(matrix.os, 'windows') }} # Windows gets angry about carriage returns
         run: mix format --check-formatted
 
+      - name: Run dialyzer
+        working-directory: ${{env.working-directory}}
+        run: mix dialyzer
+
       - name: Run NATS for tests
         uses: wasmcloud/common-actions/run-nats@main
         if: ${{ startswith(matrix.os, 'ubuntu') }} # Run on Ubuntu only as a temporary workaround to dependencies that aren't present on windows/mac runners

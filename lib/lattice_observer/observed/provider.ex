@@ -11,12 +11,12 @@ defmodule LatticeObserver.Observed.Provider do
   are tracked in the same way as actor instances.
   """
   @type t :: %Provider{
-          id: String.t(),
-          name: String.t(),
-          issuer: String.t(),
-          contract_id: String.t(),
-          tags: String.t(),
-          link_name: String.t(),
+          id: binary(),
+          name: binary(),
+          issuer: binary(),
+          contract_id: binary(),
+          tags: binary(),
+          link_name: binary(),
           instances: [Instance.t()]
         }
 

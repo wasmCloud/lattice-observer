@@ -40,25 +40,25 @@ defmodule LatticeObserver.Observed.Lattice do
   @typedoc """
   A provider key is the provider's public key accompanied by the link name
   """
-  @type provider_key :: {String.t(), String.t()}
+  @type provider_key :: {binary(), binary()}
 
-  @type actormap :: %{required(String.t()) => [Actor.t()]}
+  @type actormap :: %{required(binary()) => [Actor.t()]}
   @type providermap :: %{required(provider_key()) => Provider.t()}
-  @type hostmap :: %{required(String.t()) => Host.t()}
+  @type hostmap :: %{required(binary()) => Host.t()}
   # map between OCI image URL/imageref and public key
-  @type refmap :: %{required(String.t()) => String.t()}
-  @type claimsmap :: %{required(String.t()) => Claims.t()}
+  @type refmap :: %{required(binary()) => binary()}
+  @type claimsmap :: %{required(binary()) => Claims.t()}
 
   @type entitystatus :: :healthy | :warn | :fail | :unavailable | :remove
 
   @typedoc """
   Keys are the instance ID, values are ISO 8601 timestamps in UTC
   """
-  @type instance_trackmap :: %{required(String.t()) => DateTime.t()}
+  @type instance_trackmap :: %{required(binary()) => DateTime.t()}
 
   defmodule Parameters do
     @type t :: %Parameters{
-            host_status_decay_rate_seconds: Integer.t()
+            host_status_decay_rate_seconds: integer()
           }
     defstruct [:host_status_decay_rate_seconds]
   end
@@ -68,7 +68,7 @@ defmodule LatticeObserver.Observed.Lattice do
   of the actors, providers, link definitions, and hosts within it.
   """
   @type t :: %Lattice{
-          id: String.t(),
+          id: binary(),
           actors: actormap(),
           providers: providermap(),
           hosts: hostmap(),
@@ -76,11 +76,11 @@ defmodule LatticeObserver.Observed.Lattice do
           instance_tracking: instance_trackmap(),
           refmap: refmap(),
           invocation_log: Invocation.invocationlog_map(),
-          parameters: [Parameters.t()],
+          parameters: Parameters.t(),
           claims: claimsmap()
         }
 
-  @spec new(String.t(), Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
+  @spec new(binary(), Keyword.t()) :: LatticeObserver.Observed.Lattice.t()
   def new(id \\ "default", parameters \\ []) do
     %Lattice{
       id: id,
@@ -271,6 +271,8 @@ defmodule LatticeObserver.Observed.Lattice do
 
     l =
       apply_claims(l, %Claims{
+        call_alias: Map.get(claims, "call_alias", ""),
+        caps: Map.get(claims, "caps", ""),
         iss: Map.get(claims, "issuer", "N/A"),
         tags: Map.get(claims, "tags", ""),
         name: Map.get(claims, "name", "unavailable"),
@@ -329,8 +331,7 @@ defmodule LatticeObserver.Observed.Lattice do
         %Cloudevents.Format.V_1_0.Event{
           data:
             %{
-              "public_key" => pk,
-              "instance_id" => instance_id
+              "public_key" => pk
             } = d,
           datacontenttype: "application/json",
           source: source_host,
@@ -338,7 +339,7 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
-    EventProcessor.remove_actor_instance(l, source_host, pk, instance_id, spec)
+    EventProcessor.remove_actor_instance(l, source_host, pk, spec)
   end
 
   def apply_event(
@@ -462,9 +463,9 @@ defmodule LatticeObserver.Observed.Lattice do
   # pk is an optional filter by public key
   @spec running_instances(
           LatticeObserver.Observed.Lattice.t(),
-          nil | String.t(),
-          String.t()
-        ) :: [%{id: String.t(), instance_id: String.t(), host_id: String.t()}]
+          nil | binary(),
+          binary()
+        ) :: [%{id: binary(), instance_id: binary(), host_id: binary()}]
   def running_instances(%Lattice{} = l, pk, spec_id) when is_binary(pk) do
     if String.starts_with?(pk, "M") do
       actors = actors_in_appspec(l, spec_id)
@@ -506,7 +507,7 @@ defmodule LatticeObserver.Observed.Lattice do
   end
 
   @spec actors_in_appspec(LatticeObserver.Observed.Lattice.t(), binary) :: [
-          %{actor_id: String.t(), instance_id: String.t(), host_id: String.t()}
+          %{actor_id: binary(), instance_id: binary(), host_id: binary()}
         ]
   def actors_in_appspec(%Lattice{actors: actors}, appspec) when is_binary(appspec) do
     for {pk, %Actor{instances: instances}} <- actors,
@@ -522,10 +523,10 @@ defmodule LatticeObserver.Observed.Lattice do
 
   @spec providers_in_appspec(LatticeObserver.Observed.Lattice.t(), binary) :: [
           %{
-            provider_id: String.t(),
-            link_name: String.t(),
-            host_id: String.t(),
-            instance_id: String.t()
+            provider_id: binary(),
+            link_name: binary(),
+            host_id: binary(),
+            instance_id: binary()
           }
         ]
   def providers_in_appspec(%Lattice{providers: providers}, appspec) when is_binary(appspec) do
@@ -562,9 +563,9 @@ defmodule LatticeObserver.Observed.Lattice do
           Lattice.t(),
           Invocation.Entity.t(),
           Invocation.Entity.t(),
-          String.t()
+          binary()
         ) ::
-          :error | {:ok, Invocation.Log.t()}
+          :error | {:ok, Invocation.InvocationLog.t()}
   def lookup_invocation_log(%Lattice{invocation_log: log}, from, to, operation) do
     case Map.get(log, {from, to, operation}) do
       nil -> :error

@@ -16,16 +16,16 @@ defmodule LatticeObserver.Observed.Claims do
   ]
 
   @type t :: %Claims{
-          sub: String.t(),
-          call_alias: String.t(),
-          iss: String.t(),
-          name: String.t(),
+          sub: binary(),
+          call_alias: binary(),
+          iss: binary(),
+          name: binary(),
           # Comma-delimited list
-          caps: String.t(),
-          rev: String.t(),
+          caps: binary(),
+          rev: binary(),
           # Comma-delimited list
-          tags: String.t(),
-          version: String.t()
+          tags: binary(),
+          version: binary()
         }
 
   # Apply a capability provider's claims
