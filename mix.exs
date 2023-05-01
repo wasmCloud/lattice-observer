@@ -5,7 +5,7 @@ defmodule LatticeObserver.MixProject do
     [
       app: :lattice_observer,
       version: "0.4.0",
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       elixirc_paths: compiler_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
