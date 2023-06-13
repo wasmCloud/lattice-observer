@@ -12,7 +12,8 @@ defmodule LatticeObserver.Observed.Claims do
     :caps,
     :rev,
     :tags,
-    :version
+    :version,
+    :config_schema
   ]
 
   @type t :: %Claims{
@@ -25,7 +26,8 @@ defmodule LatticeObserver.Observed.Claims do
           rev: binary(),
           # Comma-delimited list
           tags: binary(),
-          version: binary()
+          version: binary(),
+          config_schema: binary() | nil
         }
 
   # Apply a capability provider's claims

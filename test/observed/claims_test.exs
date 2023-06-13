@@ -4,6 +4,105 @@ defmodule LatticeObserverTest.Observed.ClaimsTest do
   alias TestSupport.CloudEvents
 
   describe "Claims cache works appropriately" do
+    test "Applying provider claims with a JSON schema stores the schema" do
+      l = Lattice.new()
+
+      l =
+        Lattice.apply_claims(l, %Claims{
+          sub: "Vxxxx",
+          iss: "Axxxx",
+          caps: "wasmcloud:othertest",
+          rev: "0",
+          version: "0.1",
+          name: "Super ultra mega test",
+          config_schema: "..this is a JSON schema.."
+        })
+
+      assert l.claims == %{
+               "Vxxxx" => %LatticeObserver.Observed.Claims{
+                 sub: "Vxxxx",
+                 call_alias: nil,
+                 iss: "Axxxx",
+                 name: "Super ultra mega test",
+                 caps: "wasmcloud:othertest",
+                 rev: "0",
+                 tags: nil,
+                 version: "0.1",
+                 config_schema: "..this is a JSON schema.."
+               }
+             }
+    end
+
+    test "Heartbeats cannot wipe out JSON schema on provider claims" do
+      l = Lattice.new()
+
+      l =
+        Lattice.apply_claims(l, %Claims{
+          sub: "Vxxxx",
+          iss: "Axxxx",
+          caps: "wasmcloud:othertest",
+          rev: "0",
+          version: "0.1",
+          name: "Super ultra mega test",
+          config_schema: "..this is a JSON schema.."
+        })
+
+      hb =
+        CloudEvents.host_heartbeat(
+          "Nxxxx",
+          %{foo: "bar", baz: "biz"},
+          %{"Mxxxx" => 1},
+          [
+            %{
+              "link_name" => "default",
+              "public_key" => "Vxxxx"
+            }
+          ]
+        )
+
+      l = Lattice.apply_event(l, hb)
+
+      assert l.claims == %{
+               "Vxxxx" => %LatticeObserver.Observed.Claims{
+                 sub: "Vxxxx",
+                 call_alias: nil,
+                 iss: "Axxxx",
+                 name: "Super ultra mega test",
+                 caps: "wasmcloud:othertest",
+                 rev: "0",
+                 tags: nil,
+                 version: "0.1",
+                 config_schema: "..this is a JSON schema.."
+               }
+             }
+
+      # applying claims w/out a schema will wipe out the previously existing one (claims are "bulk update")
+
+      l =
+        Lattice.apply_claims(l, %Claims{
+          sub: "Vxxxx",
+          iss: "Axxxx",
+          caps: "wasmcloud:othertest",
+          rev: "0",
+          version: "0.1",
+          name: "Super ultra mega test"
+        })
+
+      assert l.claims == %{
+               "Vxxxx" => %LatticeObserver.Observed.Claims{
+                 sub: "Vxxxx",
+                 call_alias: nil,
+                 iss: "Axxxx",
+                 name: "Super ultra mega test",
+                 caps: "wasmcloud:othertest",
+                 rev: "0",
+                 tags: nil,
+                 version: "0.1",
+                 config_schema: nil
+               }
+             }
+    end
+
     test "Applying claims updates the cache" do
       l = Lattice.new()
 
