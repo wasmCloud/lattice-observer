@@ -261,6 +261,18 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.health_check_status"
+        }
+      ) do
+    # No-op. We don't care about unchanged statuses
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
           data:
             %{
               "public_key" => pk,
@@ -354,6 +366,18 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.actors_stopped"
+        }
+      ) do
+    # No-op. We handle each of the actor_stopped events instead
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
           data:
             %{
               "public_key" => pk,
@@ -386,6 +410,18 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.actors_started"
+        }
+      ) do
+    # No-op. We handle each of the actor_started events instead
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
           source: _source_host,
           datacontenttype: "application/json",
           time: _stamp,
@@ -393,6 +429,18 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     # This does not currently affect state, but shouldn't generate a warning either
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          datacontenttype: "application/json",
+          source: _source_host,
+          type: "com.wasmcloud.lattice.actors_start_failed"
+        }
+      ) do
+    # No-op. We handle each of the actor_start_failed events instead
     l
   end
 
