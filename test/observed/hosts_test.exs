@@ -209,7 +209,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      host_id: "Nxxx",
                      id: "iid1",
                      revision: 0,
-                     spec_id: "",
+                     annotations: %{},
                      version: ""
                    }
                  ],
@@ -228,7 +228,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      host_id: "Nxxx",
                      id: "iid3",
                      revision: 0,
-                     spec_id: "",
+                     annotations: %{},
                      version: ""
                    }
                  ],
@@ -305,7 +305,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      host_id: "Nxxx",
                      id: "n/a",
                      revision: 0,
-                     spec_id: "",
+                     annotations: %{},
                      version: ""
                    }
                  ],
@@ -324,7 +324,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                      host_id: "Nxxx",
                      id: "n/a",
                      revision: 0,
-                     spec_id: "",
+                     annotations: %{},
                      version: ""
                    }
                  ],

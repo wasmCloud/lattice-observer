@@ -389,7 +389,7 @@ defmodule LatticeObserver.Observed.Lattice do
           type: "com.wasmcloud.lattice.actor_started"
         }
       ) do
-    spec = Map.get(d, "annotations", %{}) |> Map.get(@annotation_app_spec, "")
+    annotations = Map.get(d, "annotations", %{})
     claims = Map.get(d, "claims", %{})
 
     l =
@@ -404,7 +404,7 @@ defmodule LatticeObserver.Observed.Lattice do
         sub: pk
       })
 
-    EventProcessor.put_actor_instance(l, source_host, pk, instance_id, spec, stamp, claims)
+    EventProcessor.put_actor_instance(l, source_host, pk, instance_id, annotations, stamp, claims)
   end
 
   def apply_event(
@@ -523,9 +523,9 @@ defmodule LatticeObserver.Observed.Lattice do
           nil | binary(),
           binary()
         ) :: [%{id: binary(), instance_id: binary(), host_id: binary()}]
-  def running_instances(%Lattice{} = l, pk, spec_id) when is_binary(pk) do
+  def running_instances(%Lattice{} = l, pk, app_name) when is_binary(pk) do
     if String.starts_with?(pk, "M") do
-      actors = actors_in_appspec(l, spec_id)
+      actors = actors_in_appspec(l, app_name)
 
       actors =
         if pk != nil do
@@ -540,7 +540,7 @@ defmodule LatticeObserver.Observed.Lattice do
         %{id: pk, instance_id: iid, host_id: hid}
       end)
     else
-      providers = providers_in_appspec(l, spec_id)
+      providers = providers_in_appspec(l, app_name)
 
       providers =
         if pk != nil do
@@ -559,17 +559,17 @@ defmodule LatticeObserver.Observed.Lattice do
     end
   end
 
-  def running_instances(%Lattice{}, nil, _spec_id) do
+  def running_instances(%Lattice{}, nil, _app_name) do
     []
   end
 
   @spec actors_in_appspec(LatticeObserver.Observed.Lattice.t(), binary) :: [
           %{actor_id: binary(), instance_id: binary(), host_id: binary()}
         ]
-  def actors_in_appspec(%Lattice{actors: actors}, appspec) when is_binary(appspec) do
+  def actors_in_appspec(%Lattice{actors: actors}, app_name) when is_binary(app_name) do
     for {pk, %Actor{instances: instances}} <- actors,
         instance <- instances,
-        in_spec?(instance, appspec) do
+        in_spec?(instance, app_name) do
       %{
         actor_id: pk,
         instance_id: instance.id,
@@ -635,7 +635,7 @@ defmodule LatticeObserver.Observed.Lattice do
     Map.values(l.invocation_log)
   end
 
-  defp in_spec?(%Instance{spec_id: spec_id}, appspec) do
-    spec_id == appspec
+  defp in_spec?(%Instance{annotations: annotations}, appspec) do
+    Map.get(annotations, @annotation_app_spec, "") == appspec
   end
 end

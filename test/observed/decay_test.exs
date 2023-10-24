@@ -98,7 +98,7 @@ defmodule LatticeObserverTest.Observed.DecayTest do
                      host_id: "Nxxx",
                      id: "abc123",
                      revision: 0,
-                     spec_id: "none",
+                     annotations: %{"wasmcloud.dev/appspec" => "none"},
                      version: "1.0"
                    }
                  ],
@@ -137,7 +137,7 @@ defmodule LatticeObserverTest.Observed.DecayTest do
                      host_id: "Nxxx",
                      id: "abc123",
                      revision: 0,
-                     spec_id: "none",
+                     annotations: %{"wasmcloud.dev/appspec" => "none"},
                      version: "1.0"
                    }
                  ],

@@ -3,8 +3,8 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
   alias LatticeObserver.Observed.{Lattice, Instance, Provider, EventProcessor}
   alias TestSupport.CloudEvents
 
-  @test_spec "testapp"
-  @test_spec_2 "othertestapp"
+  @test_spec %{"wasmcloud.dev/appspec" => "testapp"}
+  @test_spec_2 %{"wasmcloud.dev/appspec" => "othertestapp"}
   @test_host "Nxxx"
   @test_host2 "Nxxy"
   @test_contract "wasmcloud:test"
@@ -51,7 +51,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                   host_id: "Nxxx",
                   id: "n/a",
                   revision: 2,
-                  spec_id: "testapp",
+                  annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                   version: "1.0"
                 }
               ],
@@ -152,7 +152,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                          host_id: "Nxxx",
                          id: "n/a",
                          revision: 2,
-                         spec_id: "testapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                          version: "1.0"
                        }
                      ],
@@ -169,7 +169,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                          host_id: "Nxxx",
                          id: "n/a",
                          revision: 2,
-                         spec_id: "testapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                          version: "1.0"
                        }
                      ],
@@ -224,14 +224,14 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                        %Instance{
                          host_id: "Nxxy",
                          id: "n/a",
-                         spec_id: "othertestapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "othertestapp"},
                          revision: 2,
                          version: "1.0"
                        },
                        %Instance{
                          host_id: "Nxxx",
                          id: "n/a",
-                         spec_id: "testapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                          revision: 2,
                          version: "1.0"
                        }
@@ -246,7 +246,7 @@ defmodule LatticeObserverTest.Observed.ProvidersTest do
                          host_id: "Nxxx",
                          id: "n/a",
                          revision: 2,
-                         spec_id: "testapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                          version: "1.0"
                        }
                      ],
