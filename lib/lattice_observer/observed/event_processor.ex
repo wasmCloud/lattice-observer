@@ -1,6 +1,4 @@
 defmodule LatticeObserver.Observed.EventProcessor do
-  @annotation_app_spec "wasmcloud.dev/appspec"
-
   alias LatticeObserver.Observed.{Lattice, Provider, Host, Actor, Instance, LinkDefinition}
 
   defp get_claim(_l = %Lattice{claims: claims}, field, pk, default \\ "") do
@@ -63,15 +61,15 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, spec, _stamp, claims)
-      when is_binary(pk) and is_binary(instance_id) and is_binary(spec) do
+  def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, annotations, _stamp, claims)
+      when is_binary(pk) and is_binary(instance_id) and is_map(annotations) do
     actor = Map.get(l.actors, pk, Actor.new(pk, "unavailable"))
     actor = merge_actor(actor, l, claims)
 
     instance = %Instance{
       id: instance_id,
       host_id: host_id,
-      spec_id: spec,
+      annotations: annotations,
       version: Map.get(claims, "version", get_claim(l, :version, pk)),
       revision: Map.get(claims, "revision", get_claim(l, :rev, pk, 0))
     }
@@ -91,7 +89,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
         link_name,
         contract_id,
         instance_id,
-        spec,
+        annotations,
         stamp,
         claims
       ) do
@@ -103,7 +101,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
     instance = %Instance{
       id: instance_id,
       host_id: source_host,
-      spec_id: spec,
+      annotations: annotations,
       version: Map.get(claims, "version", get_claim(l, :version, pk)),
       # NOTE - wasmCloud Host does not yet emit provider rev
       revision: Map.get(claims, "revision", get_claim(l, :rev, pk, "0") |> parse_revision())
@@ -213,8 +211,6 @@ defmodule LatticeObserver.Observed.EventProcessor do
   def record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
     labels = Map.get(data, "labels", %{})
     friendly_name = Map.get(data, "friendly_name", "")
-    annotations = Map.get(data, "annotations", %{})
-    spec = Map.get(annotations, @annotation_app_spec, "")
     uptime_seconds = Map.get(data, "uptime_seconds", 0)
     version = Map.get(data, "version", "v0.0.0")
 
@@ -251,25 +247,23 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     # legacy heartbeat has a list for the actors field...
     # default to "new format" if this field is missing
-    # TODO - once a few wasmCloud OTP releases have gone by with the new heartbeat format, stop
-    # parsing/processing the legacy structure
     l =
       if is_list(Map.get(data, "actors", %{})) do
-        put_legacy_instances(l, source_host, spec, stamp, data)
+        put_legacy_instances(l, source_host, stamp, data)
       else
         actors_expanded =
-          Enum.flat_map(Map.get(data, "actors", %{}), fn {k, count} ->
-            Enum.map(1..count, fn _ -> k end)
+          Enum.flat_map(Map.get(data, "actors", %{}), fn {public_key, count} ->
+            Enum.map(1..count, fn _ -> {public_key, %{}} end)
           end)
 
         l =
-          List.foldl(actors_expanded, l, fn pk, acc ->
+          List.foldl(actors_expanded, l, fn public_key, acc ->
             put_actor_instance(
               acc,
               source_host,
-              pk,
+              public_key,
               "n/a",
-              spec,
+              %{},
               stamp,
               %{}
             )
@@ -283,7 +277,7 @@ defmodule LatticeObserver.Observed.EventProcessor do
             x["link_name"],
             Map.get(x, "contract_id", "n/a"),
             "n/a",
-            spec,
+            Map.get(x, "annotations", %{}),
             stamp,
             %{}
           )
@@ -293,15 +287,15 @@ defmodule LatticeObserver.Observed.EventProcessor do
     l
   end
 
-  defp put_legacy_instances(l = %Lattice{}, source_host, spec, stamp, data) do
+  defp put_legacy_instances(l = %Lattice{}, source_host, stamp, data) do
     l =
       List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
         put_actor_instance(
           acc,
           source_host,
           x["public_key"],
-          x["instance_id"],
-          spec,
+          "n/a",
+          x["annotations"],
           stamp,
           %{}
         )
@@ -314,8 +308,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
         x["public_key"],
         x["link_name"],
         x["contract_id"],
-        x["instance_id"],
-        spec,
+        "n/a",
+        x["annotations"],
         stamp,
         %{}
       )

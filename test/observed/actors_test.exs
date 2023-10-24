@@ -24,7 +24,7 @@ defmodule LatticeObserverTest.Observed.ActorsTest do
                          host_id: "Nxxx",
                          id: "abc123",
                          revision: 0,
-                         spec_id: "testapp",
+                         annotations: %{"wasmcloud.dev/appspec" => "testapp"},
                          version: "1.0"
                        }
                      ],
