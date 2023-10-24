@@ -257,13 +257,13 @@ defmodule LatticeObserver.Observed.EventProcessor do
           end)
 
         l =
-          List.foldl(actors_expanded, l, fn public_key, acc ->
+          List.foldl(actors_expanded, l, fn {public_key, annotations}, acc ->
             put_actor_instance(
               acc,
               source_host,
               public_key,
               "n/a",
-              %{},
+              annotations,
               stamp,
               %{}
             )
@@ -294,8 +294,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
           acc,
           source_host,
           x["public_key"],
-          "n/a",
-          x["annotations"],
+          Map.get(x, "instance_id", "n/a"),
+          Map.get(x, "annotations", %{}),
           stamp,
           %{}
         )
@@ -308,8 +308,8 @@ defmodule LatticeObserver.Observed.EventProcessor do
         x["public_key"],
         x["link_name"],
         x["contract_id"],
-        "n/a",
-        x["annotations"],
+        Map.get(x, "instance_id", "n/a"),
+        Map.get(x, "annotations", %{}),
         stamp,
         %{}
       )
