@@ -331,6 +331,45 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.health_check_status"
+        }
+      ) do
+    # This does not currently affect state, but shouldn't generate a warning either
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actors_started"
+        }
+      ) do
+    # This does not currently affect state, but shouldn't generate a warning either
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actors_stopped"
+        }
+      ) do
+    # This does not currently affect state, but shouldn't generate a warning either
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
           data:
             %{
               "link_name" => link_name,
