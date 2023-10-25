@@ -287,7 +287,6 @@ defmodule LatticeObserver.Observed.Lattice do
         }
       ) do
     annotations = Map.get(d, "annotations", %{})
-    spec = Map.get(annotations, @annotation_app_spec, "")
     claims = Map.get(d, "claims", %{})
 
     l =
@@ -309,7 +308,7 @@ defmodule LatticeObserver.Observed.Lattice do
       link_name,
       contract_id,
       instance_id,
-      spec,
+      annotations,
       stamp,
       claims
     )
