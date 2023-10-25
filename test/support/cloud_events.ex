@@ -74,13 +74,13 @@ defmodule TestSupport.CloudEvents do
     |> Cloudevents.from_map!()
   end
 
-  def provider_started(pk, contract_id, link_name, instance_id, spec, host) do
+  def provider_started(pk, contract_id, link_name, instance_id, annotations, host) do
     %{
       "public_key" => pk,
       "instance_id" => instance_id,
       "link_name" => link_name,
       "contract_id" => contract_id,
-      "annotations" => %{@appspec => spec},
+      "annotations" => annotations,
       "claims" => %{
         "name" => "test provider",
         "version" => "1.0",
