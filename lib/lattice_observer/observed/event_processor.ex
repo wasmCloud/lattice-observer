@@ -61,6 +61,43 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
+  # Helper function to set the actor instances when an actor is scaled
+  def set_actor_instances(l = %Lattice{}, host_id, pk, annotations, claims, scale)
+      when is_binary(pk) and is_map(annotations) and is_integer(scale) do
+    actor = Map.get(l.actors, pk, Actor.new(pk, "unavailable"))
+    actor = merge_actor(actor, l, claims)
+    # Reset instances
+    actor = %Actor{actor | instances: []}
+
+    # Create `scale` instances to add to the actor
+    actor =
+      1..scale
+      |> Enum.reduce(actor, fn _i, acc ->
+        instance = %Instance{
+          id: "N/A",
+          host_id: host_id,
+          annotations: annotations,
+          version: Map.get(claims, "version", get_claim(l, :version, pk)),
+          revision: Map.get(claims, "revision", get_claim(l, :rev, pk, 0))
+        }
+
+        %Actor{acc | instances: [instance | acc.instances]}
+      end)
+
+    %Lattice{
+      l
+      | actors: Map.put(l.actors, pk, actor)
+    }
+  end
+
+  # Helper function to remove all instances of an actor when it's scaled to zero
+  def remove_actor(l = %Lattice{}, pk) when is_binary(pk) do
+    %Lattice{
+      l
+      | actors: Map.delete(l.actors, pk)
+    }
+  end
+
   def put_actor_instance(l = %Lattice{}, host_id, pk, instance_id, annotations, _stamp, claims)
       when is_binary(pk) and is_binary(instance_id) and is_map(annotations) do
     actor = Map.get(l.actors, pk, Actor.new(pk, "unavailable"))
