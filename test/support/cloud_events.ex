@@ -42,6 +42,25 @@ defmodule TestSupport.CloudEvents do
     |> LatticeObserver.CloudEvent.new("actor_started", host)
   end
 
+  def actor_scaled(pk, spec, host, image_ref, scale, name \\ "Test Actor") do
+    %{
+      "public_key" => pk,
+      "annotations" => %{@appspec => spec},
+      "claims" => %{
+        "name" => name,
+        "caps" => ["test", "test2"],
+        "version" => "1.0",
+        "revision" => 0,
+        "tags" => "",
+        "issuer" => "ATESTxxx"
+      },
+      "host_id" => host,
+      "image_ref" => image_ref,
+      "max_instances" => scale
+    }
+    |> LatticeObserver.CloudEvent.new("actor_scaled", host)
+  end
+
   def actor_stopped(pk, instance_id, spec, host) do
     %{"public_key" => pk, "instance_id" => instance_id, "annotations" => %{@appspec => spec}}
     |> LatticeObserver.CloudEvent.new("actor_stopped", host)

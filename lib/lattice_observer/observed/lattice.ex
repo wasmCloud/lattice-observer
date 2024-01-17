@@ -448,6 +448,76 @@ defmodule LatticeObserver.Observed.Lattice do
   def apply_event(
         l = %Lattice{},
         %Cloudevents.Format.V_1_0.Event{
+          data:
+            %{
+              "public_key" => pk,
+              "max_instances" => scale
+            } = d,
+          source: source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actor_scaled"
+        }
+      )
+      when scale > 0 do
+    annotations = Map.get(d, "annotations", %{})
+    claims = Map.get(d, "claims", %{})
+
+    l =
+      apply_claims(l, %Claims{
+        call_alias: Map.get(claims, "call_alias", ""),
+        iss: Map.get(claims, "issuer", "N/A"),
+        name: Map.get(claims, "name", ""),
+        caps: Map.get(claims, "caps", []) |> Enum.join(","),
+        rev: Map.get(claims, "revision", ""),
+        tags: Map.get(claims, "tags", ""),
+        version: Map.get(claims, "version", ""),
+        sub: pk
+      })
+
+    EventProcessor.set_actor_instances(
+      l,
+      source_host,
+      pk,
+      annotations,
+      claims,
+      scale
+    )
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          data: %{
+            "public_key" => pk,
+            "max_instances" => scale
+          },
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actor_scaled"
+        }
+      )
+      when scale == 0 do
+    EventProcessor.remove_actor(l, pk)
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
+          source: _source_host,
+          datacontenttype: "application/json",
+          time: _stamp,
+          type: "com.wasmcloud.lattice.actor_scale_failed"
+        }
+      ) do
+    # This does not currently affect state, but shouldn't generate a warning either
+    l
+  end
+
+  def apply_event(
+        l = %Lattice{},
+        %Cloudevents.Format.V_1_0.Event{
           datacontenttype: "application/json",
           source: _source_host,
           type: "com.wasmcloud.lattice.actors_started"
