@@ -113,28 +113,8 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                Lattice.new()
     end
 
-    # updated heartbeat shape
-    #  "actors": {
-    #   "MB2ZQB6ROOMAYBO4ZCTFYWN7YIVBWA3MTKZYAQKJMTIHE2ELLRW2E3ZW": 10
-    #   },
-    #   "friendly_name": "wandering-meadow-5880",
-    #   "labels": {
-    #     "hostcore.arch": "aarch64",
-    #     "hostcore.os": "macos",
-    #     "hostcore.osfamily": "unix"
-    #   },
-    #   "providers": [
-    #     {
-    #       "link_name": "default",
-    #       "public_key": "VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M"
-    #     }
-    #   ],
-    #   "uptime_human": "1 minute, 32 seconds",
-    #   "uptime_seconds": 92,
-    #   "version": "0.60.0"
-
-    test "Propertly records LEGACY host heartbeat" do
-      hb = CloudEvents.host_heartbeat_old(@test_host, %{foo: "bar", baz: "biz"})
+    test "Propertly records NEW host heartbeat" do
+      hb = CloudEvents.host_heartbeat_new(@test_host, %{foo: "bar", baz: "biz"})
       stamp = EventProcessor.timestamp_from_iso8601(hb.time)
       l = Lattice.apply_event(Lattice.new(), hb)
 
@@ -142,7 +122,7 @@ defmodule LatticeObserverTest.Observed.HostsTest do
       assert l.hosts[@test_host].status == :healthy
       assert l.hosts[@test_host].last_seen == stamp
 
-      hb2 = CloudEvents.host_heartbeat_old(@test_host, %{foo: "bar", baz: "biz"})
+      hb2 = CloudEvents.host_heartbeat_new(@test_host, %{foo: "bar", baz: "biz"})
       stamp2 = EventProcessor.timestamp_from_iso8601(hb2.time)
       l = Lattice.apply_event(l, hb2)
 
@@ -156,17 +136,37 @@ defmodule LatticeObserverTest.Observed.HostsTest do
           %{foo: "bar"},
           [
             %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "iid1"
+              "id" => "Mxxxx",
+              "name" => "Test Actor",
+              "image_ref" => "wasmcloud.azurecr.io/actor:0.1.0",
+              "instances" => [
+                %{
+                  "annotations" => %{"foo" => "bar"},
+                  "image_ref" => "wasmcloud.azurecr.io/actor:0.1.0",
+                  "instance_id" => "iid1",
+                  "revision" => 0,
+                  "max_instances" => 1
+                }
+              ]
             },
             %{
-              "public_key" => "Mxxxy",
-              "instance_id" => "iid2"
+              "id" => "Mxxxy",
+              "name" => "Test Actor Deux",
+              "image_ref" => "wasmcloud.azurecr.io/actortwo:0.1.0",
+              "instances" => [
+                %{
+                  "annotations" => %{"bar" => "baz"},
+                  "image_ref" => "wasmcloud.azurecr.io/actortwo:0.1.0",
+                  "instance_id" => "iid2",
+                  "revision" => 0,
+                  "max_instances" => 1
+                }
+              ]
             }
           ],
           [
             %{
-              "public_key" => "Vxxxxx",
+              "id" => "Vxxxxx",
               "instance_id" => "iid3",
               "contract_id" => "wasmcloud:test",
               "link_name" => "default"
@@ -182,16 +182,29 @@ defmodule LatticeObserverTest.Observed.HostsTest do
           %{foo: "bar"},
           [
             %{
-              "public_key" => "Mxxxx",
-              "instance_id" => "iid1"
+              "id" => "Mxxxx",
+              "name" => "Test Actor",
+              "image_ref" => "wasmcloud.azurecr.io/actor:0.1.0",
+              "instances" => [
+                %{
+                  "annotations" => %{"foo" => "bar"},
+                  "image_ref" => "wasmcloud.azurecr.io/actor:0.1.0",
+                  "instance_id" => "iid1",
+                  "revision" => 0,
+                  "max_instances" => 1
+                }
+              ]
             }
           ],
           [
             %{
-              "public_key" => "Vxxxxx",
-              "instance_id" => "iid3",
+              "id" => "Vxxxxx",
               "contract_id" => "wasmcloud:test",
-              "link_name" => "default"
+              "link_name" => "default",
+              "image_ref" => "wasmcloud.azurecr.io/provider:0.1.0",
+              "revision" => 0,
+              "annotations" => %{"foo" => "bar"},
+              "name" => "Test Provider"
             }
           ]
         )
@@ -207,9 +220,9 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  instances: [
                    %LatticeObserver.Observed.Instance{
                      host_id: "Nxxx",
-                     id: "iid1",
+                     id: "N/A",
                      revision: 0,
-                     annotations: %{},
+                     annotations: %{"foo" => "bar"},
                      version: ""
                    }
                  ],
@@ -226,9 +239,9 @@ defmodule LatticeObserverTest.Observed.HostsTest do
                  instances: [
                    %LatticeObserver.Observed.Instance{
                      host_id: "Nxxx",
-                     id: "iid3",
+                     id: "n/a",
                      revision: 0,
-                     annotations: %{},
+                     annotations: %{"foo" => "bar"},
                      version: ""
                    }
                  ],

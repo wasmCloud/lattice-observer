@@ -225,26 +225,6 @@ defmodule LatticeObserver.Observed.EventProcessor do
     }
   end
 
-  # New heartbeat format
-  #  "actors": {
-  #   "MB2ZQB6ROOMAYBO4ZCTFYWN7YIVBWA3MTKZYAQKJMTIHE2ELLRW2E3ZW": 10
-  #   },
-  #   "friendly_name": "wandering-meadow-5880",
-  #   "labels": {
-  #     "hostcore.arch": "aarch64",
-  #     "hostcore.os": "macos",
-  #     "hostcore.osfamily": "unix"
-  #   },
-  #   "providers": [
-  #     {
-  #       "link_name": "default",
-  #       "public_key": "VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M"
-  #     }
-  #   ],
-  #   "uptime_human": "1 minute, 32 seconds",
-  #   "uptime_seconds": 92,
-  #   "version": "0.60.0"
-
   def record_heartbeat(l = %Lattice{}, source_host, stamp, data) do
     labels = Map.get(data, "labels", %{})
     friendly_name = Map.get(data, "friendly_name", "")
@@ -282,11 +262,10 @@ defmodule LatticeObserver.Observed.EventProcessor do
 
     l = record_host(l, source_host, labels, stamp, friendly_name, uptime_seconds, version)
 
-    # legacy heartbeat has a list for the actors field...
-    # default to "new format" if this field is missing
+    # new heartbeat has a list for the actors field with more information
     l =
       if is_list(Map.get(data, "actors", %{})) do
-        put_legacy_instances(l, source_host, stamp, data)
+        put_v82_instances(l, source_host, stamp, data)
       else
         actors_expanded =
           Enum.flat_map(Map.get(data, "actors", %{}), fn {public_key, count} ->
@@ -324,25 +303,31 @@ defmodule LatticeObserver.Observed.EventProcessor do
     l
   end
 
-  defp put_legacy_instances(l = %Lattice{}, source_host, stamp, data) do
+  defp put_v82_instances(l = %Lattice{}, source_host, stamp, data) do
     l =
-      List.foldl(Map.get(data, "actors", []), l, fn x, acc ->
-        put_actor_instance(
-          acc,
-          source_host,
-          x["public_key"],
-          Map.get(x, "instance_id", "n/a"),
-          Map.get(x, "annotations", %{}),
-          stamp,
-          %{}
-        )
+      List.foldl(Map.get(data, "actors", []), l, fn x, all_actors ->
+        id = x["id"]
+
+        # Iterate over the instances and, using the annotations and scale, create
+        # a list of instances to add to the actor.
+        x["instances"]
+        |> Enum.reduce(all_actors, fn instance, actors ->
+          set_actor_instances(
+            actors,
+            source_host,
+            id,
+            Map.get(instance, "annotations", %{}),
+            %{},
+            Map.get(instance, "max_instances", 1)
+          )
+        end)
       end)
 
     List.foldl(Map.get(data, "providers", []), l, fn x, acc ->
       put_provider_instance(
         acc,
         source_host,
-        x["public_key"],
+        x["id"],
         x["link_name"],
         x["contract_id"],
         Map.get(x, "instance_id", "n/a"),
